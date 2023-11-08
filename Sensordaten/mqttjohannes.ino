@@ -30,7 +30,12 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   // Verbinden Sie sich mit dem MQTT Broker
-  client.setServer(mqtt_server, mqtt_port);
+  if (mqtt_port == 1883) {
+    client.setServer(mqtt_server, 1883);
+  } else {
+    client.setServer(mqtt_server, mqtt_port);
+  }
+  // client.setServer(mqtt_server, mqtt_port);
 }
 
 void loop() {
