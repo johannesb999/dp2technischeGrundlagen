@@ -2,7 +2,10 @@
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <WiFiManager.h>
-#include "config.h" // Dies bindet Ihre Konfigurationsdatei ein
+#include "config.h"       // Dies bindet Ihre Konfigurationsdatei ein
+#include <ArduinoJson.h>  // Fügen Sie diese Bibliothek hinzu
+
+
 
 // DHT Sensor Einstellungen
 #define DHTPIN 2
@@ -21,7 +24,7 @@ void setup() {
   // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
   if (!wifiManager.autoConnect("AutoConnectAP")) {
     Serial.println("Fehler beim Verbinden und Timeout erreicht");
-    ESP.restart(); // Neustart des ESP
+    ESP.restart();  // Neustart des ESP
   }
 
   // Wenn die Verbindung hergestellt ist, drucken Sie die IP-Adresse
@@ -35,6 +38,7 @@ void setup() {
   } else {
     client.setServer(mqtt_server, mqtt_port);
   }
+  Serial.println(mqtt_port);
   // client.setServer(mqtt_server, mqtt_port);
 }
 
@@ -44,11 +48,8 @@ void loop() {
   }
   client.loop();
 
-  // Lesen der Sensorwerte
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-
-  // Überprüfung, ob der Sensor gültige Daten gelesen hat
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
     return;
@@ -60,22 +61,27 @@ void loop() {
   Serial.print("%  Temperature: ");
   Serial.print(t);
   Serial.println("°C ");
+  String clientId = "ESP-Johannes" + WiFi.macAddress();
 
-  // Senden der Sensorwerte an den MQTT Broker
-  if (!isnan(h) && !isnan(t)) {
-  // Convert the readings to strings
-  char humidity_payload[10];
-  char temperature_payload[10];
-  dtostrf(h, 1, 2, humidity_payload);
-  dtostrf(t, 1, 2, temperature_payload);
+  // Erstellt ein JSON-Dokument für die Temperatur
+  StaticJsonDocument<200> tempDoc;
+  tempDoc["clientId"] = clientId;
+  tempDoc["temperature"] = t;
+  char tempJsonMessage[200];
+  serializeJson(tempDoc, tempJsonMessage);
+  client.publish(temperature_topic, tempJsonMessage);
 
-  // Publish the readings to the MQTT broker
-  client.publish(humidity_topic, humidity_payload);
-  client.publish(temperature_topic, temperature_payload);
+  // Erstellt ein separates JSON-Dokument für die Luftfeuchtigkeit
+  StaticJsonDocument<200> humDoc;
+  humDoc["clientId"] = clientId;
+  humDoc["humidity"] = h;
+  char humJsonMessage[200];
+  serializeJson(humDoc, humJsonMessage);
+  client.publish(humidity_topic, humJsonMessage);
+
+  delay(5000);
 }
 
-  delay(2000);  // 2 Sekunden Pause
-}
 
 void reconnect() {
   // Loop until we're reconnected
@@ -87,7 +93,7 @@ void reconnect() {
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
-      
+
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
