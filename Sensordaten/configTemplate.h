@@ -8,7 +8,7 @@ const char* password = "WIFI-Passwort";
 
 // MQTT Broker settings
 const char* mqtt_server = "mqtt.YOUR.SERVER";
-const int mqtt_port = Your Port;
+const int mqtt_port = 0;
 
 // MQTT Topics
 const char* humidity_topic = "Your/Path";
