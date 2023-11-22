@@ -64,7 +64,7 @@ void loop() {
 
   // Erstellt ein JSON-Dokument für die Temperatur
   StaticJsonDocument<200> tempDoc;
-  tempDoc["clientId"] = clientId;
+  tempDoc["mac"] = WiFi.macAddress();
   tempDoc["temperature"] = t;
   char tempJsonMessage[200];
   serializeJson(tempDoc, tempJsonMessage);
@@ -72,7 +72,7 @@ void loop() {
 
   // Erstellt ein separates JSON-Dokument für die Luftfeuchtigkeit
   StaticJsonDocument<200> humDoc;
-  humDoc["clientId"] = clientId;
+  humDoc["mac"] = WiFi.macAddress();
   humDoc["humidity"] = h;
   char humJsonMessage[200];
   serializeJson(humDoc, humJsonMessage);
