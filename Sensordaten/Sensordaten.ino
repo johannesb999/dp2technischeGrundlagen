@@ -6,7 +6,6 @@
 #include <ArduinoJson.h>  // Fügen Sie diese Bibliothek hinzu
 
 
-
 // DHT Sensor Einstellungen
 #define DHTPIN 2
 #define DHTTYPE DHT11
