@@ -87,6 +87,22 @@ void loop() {
   serializeJson(humDoc, humJsonMessage);
   client.publish(humidity_topic, humJsonMessage);
 
+   // Erstellen eines JSON-Dokuments für den Bodenfeuchtesensor
+  StaticJsonDocument<200> soilMoistureDoc;
+  soilMoistureDoc["mac"] = WiFi.macAddress();
+  soilMoistureDoc["soilMoisture"] = soilMoistureValue;
+  char soilMoistureJsonMessage[200];
+  serializeJson(soilMoistureDoc, soilMoistureJsonMessage);
+  client.publish(soilMoisture_topic, soilMoistureJsonMessage);
+
+  // Erstellen eines JSON-Dokuments für den LDR
+  StaticJsonDocument<200> lightDoc;
+  lightDoc["mac"] = WiFi.macAddress();
+  lightDoc["lightLevel"] = lightValue;
+  char lightJsonMessage[200];
+  serializeJson(lightDoc, lightJsonMessage);
+  client.publish(light_topic, lightJsonMessage);
+
   delay(5000);
 }
 
