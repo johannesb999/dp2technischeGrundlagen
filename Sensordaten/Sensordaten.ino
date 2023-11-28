@@ -1,14 +1,15 @@
-#include <ESP8266WiFi.h>
+// #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <WiFiManager.h>
 #include "config.h"       // Dies bindet Ihre Konfigurationsdatei ein
 #include <ArduinoJson.h>  // Fügen Sie diese Bibliothek hinzu
 
-int soilMoistureValue = 0;
+#define SOIL_MOISTURE_PIN 32
+#define LDR_PIN 33
 
 // DHT Sensor Einstellungen
-#define DHTPIN 2
+#define DHTPIN 14
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -54,11 +55,13 @@ void loop() {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
-
-  soilMoistureValue = analogRead(A0); // Liest den Wert vom Sensor bei jedem Durchlauf der loop
+  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+  int lightValue = analogRead(LDR_PIN);
   Serial.print("Soil Moisture: ");
   Serial.println(soilMoistureValue);
-  delay(1000); // Wartet eine Sekunde bis zum nächsten Auslesen
+  Serial.print("Light: ");
+  Serial.println(lightValue);
+  delay(1000);
 
   // Serial prints hinzugefügt, um Daten zu sehen
   Serial.print("Humidity: ");
