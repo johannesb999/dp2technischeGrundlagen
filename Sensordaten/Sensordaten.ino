@@ -3,7 +3,7 @@
 #include <DHT.h>
 #include <WiFiManager.h>
 #include "config.h"       // Dies bindet Ihre Konfigurationsdatei ein
-#include <ArduinoJson.h>  // Fügen Sie diese Bibliothek hinzu
+#include <ArduinoJson.h>  
 
 #define SOIL_MOISTURE_PIN 32
 #define LDR_PIN 33

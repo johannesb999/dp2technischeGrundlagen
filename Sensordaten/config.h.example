@@ -3,15 +3,22 @@
 #define CONFIG_H
 
 // WiFi credentials
-const char* ssid = "WIFI-Name";
-const char* password = "WIFI-Passwort";
+const char* ssid = "YOUR_WIFI";
+const char* password = "YOUR_PASSWORD";
+
+// const char* ssid = "YOUR_WIFI";
+// const char* password = "YOUR_PASSWORD";
 
 // MQTT Broker settings
-const char* mqtt_server = "mqtt.YOUR.SERVER";
-const int mqtt_port = 1883;
+const char* mqtt_server = "mqtt.Your.Server";
+const int mqtt_port = YOUR_Port;
 
 // MQTT Topics
-const char* humidity_topic = "Your/Path";
-const char* temperature_topic = "Your/Path";
+const char* h_topic = "";
+const char* t_topic = "";
+const char* s_topic = "";
+const char* l_topic = "";
+
+
 
 #endif // CONFIG_H
