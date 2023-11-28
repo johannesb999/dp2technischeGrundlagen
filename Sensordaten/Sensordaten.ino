@@ -5,10 +5,11 @@
 #include "config.h"       // Dies bindet Ihre Konfigurationsdatei ein
 #include <ArduinoJson.h>  // Fügen Sie diese Bibliothek hinzu
 
+int soilMoistureValue = 0;
 
 // DHT Sensor Einstellungen
 #define DHTPIN 2
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
 // Initialisieren Sie den MQTT-Client
@@ -53,6 +54,11 @@ void loop() {
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
+
+  soilMoistureValue = analogRead(A0); // Liest den Wert vom Sensor bei jedem Durchlauf der loop
+  Serial.print("Soil Moisture: ");
+  Serial.println(soilMoistureValue);
+  delay(1000); // Wartet eine Sekunde bis zum nächsten Auslesen
 
   // Serial prints hinzugefügt, um Daten zu sehen
   Serial.print("Humidity: ");
