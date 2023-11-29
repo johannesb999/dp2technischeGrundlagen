@@ -2,8 +2,14 @@
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <WiFiManager.h>
-#include "config.h"       // Dies bindet Ihre Konfigurationsdatei ein
-#include <ArduinoJson.h>  
+#include "config.h"  // Dies bindet Ihre Konfigurationsdatei ein
+#include <ArduinoJson.h>
+
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+int led = LED_BUILTIN;
 
 #define SOIL_MOISTURE_PIN 32
 #define LDR_PIN 33
@@ -33,6 +39,45 @@ void setup() {
   Serial.println("IP-Adresse: ");
   Serial.println(WiFi.localIP());
 
+  ArduinoOTA.setHostname("Johannesesp32WIFI");
+  ArduinoOTA.setPassword("admin");
+  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+  // ArduinoOTA.setPort(3232);
+  ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else  // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+
+  ArduinoOTA.begin();
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // set LED to be an output pin
+  pinMode(led, OUTPUT);
+
   // Verbinden Sie sich mit dem MQTT Broker
   if (mqtt_port == 1883) {
     client.setServer(mqtt_server, 1883);
@@ -44,6 +89,7 @@ void setup() {
 }
 
 void loop() {
+  ArduinoOTA.handle();  // OTA-Handling als erstes
   if (!client.connected()) {
     reconnect();
   }
@@ -87,7 +133,7 @@ void loop() {
   serializeJson(humDoc, humJsonMessage);
   client.publish(humidity_topic, humJsonMessage);
 
-   // Erstellen eines JSON-Dokuments für den Bodenfeuchtesensor
+  // Erstellen eines JSON-Dokuments für den Bodenfeuchtesensor
   StaticJsonDocument<200> soilMoistureDoc;
   soilMoistureDoc["mac"] = WiFi.macAddress();
   soilMoistureDoc["soilMoisture"] = soilMoistureValue;
@@ -102,6 +148,12 @@ void loop() {
   char lightJsonMessage[200];
   serializeJson(lightDoc, lightJsonMessage);
   client.publish(light_topic, lightJsonMessage);
+
+
+  digitalWrite(led, HIGH);  // turn the LED on (HIGH is the voltage level)
+  delay(100);               // wait for a half second
+  digitalWrite(led, LOW);   // turn the LED off by making the voltage LOW
+  delay(100);               // wait for a half second
 
   delay(5000);
 }

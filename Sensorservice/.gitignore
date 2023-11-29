@@ -1,3 +1,4 @@
 node_modules
 .env
 mqtt_data.db
+*.db

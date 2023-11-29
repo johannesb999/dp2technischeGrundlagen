@@ -1,86 +1,137 @@
-require('dotenv').config();
-const mqtt = require('mqtt');
-const sqlite3 = require('sqlite3').verbose();
+require("dotenv").config();
+const mqtt = require("mqtt");
+const setupDatabase = require("./create_tables");
+const db = setupDatabase();
+const { v4: uuidv4 } = require("uuid");
+const clientId = `mqtt_${uuidv4()}`;
 
+const requiredEnvVariables = [
+  "MQTT_BROKER_URL",
+  "MQTT_TOPIC_TEMPERATUR",
+  "MQTT_TOPIC_FEUCHTIGKEIT",
+  "MQTT_TOPIC_SOILMOISTURE",
+  "MQTT_TOPIC_LICHT",
+  // Fügen Sie hier weitere erforderliche Umgebungsvariablen hinzu
+];
 
-// DATABASE STUFF:
-
-let db = new sqlite3.Database('./mqtt_data.db', (err) => {
-    if (err) {
-        console.error(err.message);
-    }
-    console.log('Verbunden mit der SQLite-Datenbank.');
-
-    // Lösche alle Einträge beim Start
-    db.run('DELETE FROM temperature_data', (err) => {
-        if (err) {
-            console.error(err.message);
-        }
-        console.log('Alle vorherigen Einträge gelöscht.');
-    });
-});
-
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS temperature_data (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    temperature REAL,
-    mac TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
+// Überprüfen, ob alle erforderlichen Umgebungsvariablen definiert sind
+for (const varName of requiredEnvVariables) {
+  if (!process.env[varName]) {
+    console.log(`Fehler: Umgebungsvariable ${varName} nicht definiert.`);
+    process.exit(1); // Beendet das Skript mit einem Fehlercode
+  }
+}
 
 // MQTT STUFF:
 
-const mqttClient = mqtt.connect(process.env.MQTT_BROKER_URL);
+const mqttClient = mqtt.connect(process.env.MQTT_BROKER_URL, { clientId });
 
-mqttClient.on('connect', function () {
-    mqttClient.subscribe('dp2/temperature', function (err) {
-        if (!err) {
-            console.log('Erfolgreich auf Thema "dp2/temperature" subscribed');
-        }
-    });
-    mqttClient.subscribe('dp2/humidity', function (err) {
-        if (!err) {
-            console.log('Erfolgreich auf Thema "dp2/humidity" subscribed');
-        }
-    });
+mqttClient.on("connect", function () {
+  // Loggen der Client-ID im Topic "dp2/logs"
+  const logMessage = `Client ${clientId} verbunden.`;
+  mqttClient.publish("dp2/logs", logMessage + "(Jo)");
+  console.log(logMessage);
+
+  // Subscribe auf Topics
+  mqttClient.subscribe("dp2/temperature", function (err) {
+    if (!err) {
+      console.log('Erfolgreich auf Thema "dp2/temperature" subscribed');
+    }
+  });
+  mqttClient.subscribe("dp2/humidity", function (err) {
+    if (!err) {
+      console.log('Erfolgreich auf Thema "dp2/humidity" subscribed');
+    }
+  });
+  mqttClient.subscribe("dp2/soilMoisture", function (err) {
+    if (!err) {
+      console.log('Erfolgreich auf Thema "dp2/soilMoisture" subscribed');
+    }
+  });
+  mqttClient.subscribe("dp2/light", function (err) {
+    if (!err) {
+      console.log('Erfolgreich auf Thema "dp2/light" subscribed');
+    }
+  });
 });
 
-mqttClient.on('message', (topic, message) => {
-    if (topic === 'dp2/temperature') {
-        try {
-            const data = JSON.parse(message.toString());
+mqttClient.on("message", (topic, message) => {
+  if (topic === process.env.MQTT_TOPIC_TEMPERATUR) {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log(data);
 
-            // Überprüfe, ob die Werte NULL sind
-            if (data.temperature != null && data.mac != null) {
-                const stmt = db.prepare('INSERT INTO temperature_data (temperature, mac) VALUES (?, ?)');
-                stmt.run(data.temperature, data.mac);
-                stmt.finalize();
-                console.log(`Daten gespeichert: ${message.toString()}`);
-            } else {
-                console.log('NULL-Werte erkannt, Datensatz wird ignoriert.');
-            }
-        } catch (e) {
-            console.error(`Fehler beim Parsen der Nachricht: ${e}`);
-        }
+      if (data.temperature != null && data.mac != null) {
+        const stmt = db.prepare(
+          "INSERT INTO temperature_data (temperature, mac) VALUES (?, ?)"
+        );
+        stmt.run(data.temperature, data.mac);
+        stmt.finalize();
+        console.log(`Daten gespeichert: ${message.toString()}`);
+      } else {
+        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
+      }
+    } catch (e) {
+      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
     }
-});
-mqttClient.on('message', (topic, message) => {
-    if (topic === 'dp2/humidity') {
-        try {
-            const data = JSON.parse(message.toString());
+  }
 
-            // Überprüfe, ob die Werte NULL sind
-            if (data.temperature != null && data.mac != null) {
-                const stmt = db.prepare('INSERT INTO humidity (humidity, mac) VALUES (?, ?)');
-                stmt.run(data.temperature, data.mac);
-                stmt.finalize();
-                console.log(`Daten gespeichert: ${message.toString()}`);
-            } else {
-                console.log('NULL-Werte erkannt, Datensatz wird ignoriert.');
-            }
-        } catch (e) {
-            console.error(`Fehler beim Parsen der Nachricht: ${e}`);
-        }
+  if (topic === process.env.MQTT_TOPIC_FEUCHTIGKEIT) {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log(data);
+
+      if (data.humidity != null && data.mac != null) {
+        const stmt = db.prepare(
+          "INSERT INTO humidity_data (humidity, mac) VALUES (?, ?)"
+        );
+        stmt.run(data.humidity, data.mac);
+        stmt.finalize();
+        console.log(`Daten gespeichert: ${message.toString()}`);
+      } else {
+        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
+      }
+    } catch (e) {
+      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
     }
+  }
+
+  if (topic === process.env.MQTT_TOPIC_SOILMOISTURE) {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log(data);
+
+      if (data.soilMoisture != null && data.mac != null) {
+        const stmt = db.prepare(
+          "INSERT INTO soilMoisture_data (soilMoisture, mac) VALUES (?, ?)"
+        );
+        stmt.run(data.soilMoisture, data.mac);
+        stmt.finalize();
+        console.log(`Daten gespeichert: ${message.toString()}`);
+      } else {
+        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
+      }
+    } catch (e) {
+      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
+    }
+  }
+  if (topic === process.env.MQTT_TOPIC_LICHT) {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log(data);
+
+      if (data.light != null && data.mac != null) {
+        const stmt = db.prepare(
+          "INSERT INTO light_data (light, mac) VALUES (?, ?)"
+        );
+        stmt.run(data.light, data.mac);
+        stmt.finalize();
+        console.log(`Daten gespeichert: ${message.toString()}`);
+      } else {
+        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
+      }
+    } catch (e) {
+      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
+    }
+  }
 });
