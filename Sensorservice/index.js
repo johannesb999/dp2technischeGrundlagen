@@ -21,31 +21,33 @@ for (const varName of requiredEnvVariables) {
 
 // Überprüfen, ob die Datenbanktabellen existieren
 const checkAndInsertDevice = (macAddress) => {
-  // Überprüfen, ob das Gerät bereits existiert
-  db.get(
-    "SELECT GeraeteID FROM Geraet WHERE GeraeteID = ?",
-    [macAddress],
-    (err, row) => {
-      if (err) {
-        console.error(err.message);
-        return;
-      }
-      if (!row) {
-        // Das Gerät existiert noch nicht, also fügen wir es ein
-        db.run(
-          "INSERT INTO Geraet (GeraeteID, GeraeteName) VALUES (?, ?)",
-          [macAddress, `Gerät ${macAddress}`],
-          (insertErr) => {
-            if (insertErr) {
-              console.error(insertErr.message);
-            } else {
-              console.log(`Neues Gerät hinzugefügt: ${macAddress}`);
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT GeraeteID FROM Geraet WHERE GeraeteID = ?",
+      [macAddress],
+      (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        if (!row) {
+          db.run(
+            "INSERT INTO Geraet (GeraeteID, GeraeteName) VALUES (?, ?)",
+            [macAddress, `Gerät ${macAddress}`],
+            (insertErr) => {
+              if (insertErr) {
+                reject(insertErr);
+                return;
+              }
+              resolve();
             }
-          }
-        );
+          );
+        } else {
+          resolve();
+        }
       }
-    }
-  );
+    );
+  });
 };
 
 // MQTT STUFF:
@@ -73,28 +75,33 @@ mqttClient.on("message", (topic, message) => {
     try {
       const data = JSON.parse(message.toString());
       console.log(data);
-      // Überprüfen und Einfügen des Geräts, falls nicht vorhanden
-      checkAndInsertDevice(data.mac);
+
       if (data.Wert != null && data.mac != null && data.SensorTyp != null) {
-        // Finden Sie die DeviceID, die der MAC-Adresse entspricht
-        db.get(
-          "SELECT DeviceID FROM Geraet WHERE GeraeteID = ?",
-          [data.mac],
-          (err, row) => {
-            if (err) {
-              console.error(err.message);
-              return;
-            }
-            if (row) {
-              const stmt = db.prepare(
-                "INSERT INTO Messungen (DeviceID, SensorTyp, Wert) VALUES (?, ?, ?)"
-              );
-              stmt.run(row.DeviceID, data.SensorTyp, data.Wert);
-              stmt.finalize();
-              console.log(`Daten gespeichert: ${message.toString()}`);
-            }
-          }
-        );
+        checkAndInsertDevice(data.mac)
+          .then(() => {
+            // Finden Sie die DeviceID, die der MAC-Adresse entspricht
+            db.get(
+              "SELECT DeviceID FROM Geraet WHERE GeraeteID = ?",
+              [data.mac],
+              (err, row) => {
+                if (err) {
+                  console.error(err.message);
+                  return;
+                }
+                if (row) {
+                  const stmt = db.prepare(
+                    "INSERT INTO Messungen (DeviceID, SensorTyp, Wert) VALUES (?, ?, ?)"
+                  );
+                  stmt.run(row.DeviceID, data.SensorTyp, data.Wert);
+                  stmt.finalize();
+                  console.log(`Daten gespeichert: ${message.toString()}`);
+                }
+              }
+            );
+          })
+          .catch((error) => {
+            console.error(`Fehler bei der Geräteregistrierung: ${error}`);
+          });
       } else {
         console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
       }

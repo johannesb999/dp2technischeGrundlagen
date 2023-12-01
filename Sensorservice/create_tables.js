@@ -17,7 +17,6 @@ const setupDatabase = () => {
         FOREIGN KEY (DeviceID) REFERENCES Geraet (DeviceID)
       )`);
 
-    //
     db.run(`CREATE TABLE IF NOT EXISTS User (
             UserID INTEGER PRIMARY KEY AUTOINCREMENT,
             Name TEXT NOT NULL,
