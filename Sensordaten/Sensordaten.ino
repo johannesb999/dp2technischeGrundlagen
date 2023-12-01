@@ -32,11 +32,12 @@ unsigned long lastSoilMoistureReadTime = 0;
 unsigned long lastLightReadTime = 0;
 
 // Funktion zur Sensordatensendung
+// Funktion zur Sensordatensendung
 void sendSensorData(const char* sensorType, float value) {
   StaticJsonDocument<200> doc;
   doc["mac"] = WiFi.macAddress();
-  doc["SensorTyp"] = sensorType;
-  doc["Wert"] = value;
+  doc["SensorType"] = sensorType; 
+  doc["Value"] = value;           
 
   char jsonMessage[512];
   serializeJson(doc, jsonMessage);
@@ -45,6 +46,7 @@ void sendSensorData(const char* sensorType, float value) {
   Serial.print("Send data: ");
   Serial.println(jsonMessage);
 }
+
 
 // Funktion zum erneuten Verbinden mit MQTT
 void reconnect() {

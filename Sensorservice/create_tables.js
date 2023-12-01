@@ -8,47 +8,47 @@ const setupDatabase = () => {
   });
 
   db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS Messungen (
+    db.run(`CREATE TABLE IF NOT EXISTS Measurements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         DeviceID INTEGER,
-        Wert REAL,
-        SensorTyp TEXT,
+        Value REAL,
+        SensorType TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (DeviceID) REFERENCES Geraet (DeviceID)
+        FOREIGN KEY (DeviceID) REFERENCES Device (DeviceID)
       )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS User (
             UserID INTEGER PRIMARY KEY AUTOINCREMENT,
-            Name TEXT NOT NULL,
-            Email TEXT NOT NULL UNIQUE,
-            Password TEXT NOT NULL,
+            Name TEXT,
+            Email TEXT UNIQUE,
+            Password TEXT,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
           )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS Gruppe (
-            GruppenID INTEGER PRIMARY KEY AUTOINCREMENT,
-            AdminID INTEGER NOT NULL,
-            Bezeichnung TEXT NOT NULL,
+    db.run(`CREATE TABLE IF NOT EXISTS UserGroup (
+            GroupID INTEGER PRIMARY KEY AUTOINCREMENT,
+            AdminID INTEGER,
+            Description TEXT,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (AdminID) REFERENCES User (UserID)
           )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS Geraet (
+    db.run(`CREATE TABLE IF NOT EXISTS Device (
             DeviceID INTEGER PRIMARY KEY AUTOINCREMENT,
-            GeraeteID TEXT NOT NULL UNIQUE,
+            UniqueDeviceID TEXT NOT NULL UNIQUE,
             OwnerID INTEGER,
-            GeraeteName TEXT ,
+            DeviceName TEXT,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-            Raum TEXT,
+            Room TEXT,
             FOREIGN KEY (OwnerID) REFERENCES User (UserID)
           )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS GruppeGeraet (
-            GruppenID INTEGER NOT NULL,
-            GeraeteID TEXT NOT NULL,
-            PRIMARY KEY (GruppenID, GeraeteID),
-            FOREIGN KEY (GruppenID) REFERENCES Gruppe (GruppenID),
-            FOREIGN KEY (GeraeteID) REFERENCES Geraet (GeraeteID)
+    db.run(`CREATE TABLE IF NOT EXISTS GroupDevice (
+            GroupID INTEGER ,
+            DeviceID TEXT,
+            PRIMARY KEY (GroupID, DeviceID),
+            FOREIGN KEY (GroupID) REFERENCES UserGroup (GroupID),
+            FOREIGN KEY (DeviceID) REFERENCES Device (DeviceID)
           )`);
   });
 

@@ -3,13 +3,25 @@ const mqtt = require("mqtt");
 const setupDatabase = require("./create_tables");
 const db = setupDatabase();
 const { v4: uuidv4 } = require("uuid");
+const fs = require("fs");
 const clientId = `mqtt_${uuidv4()}`;
 
-const requiredEnvVariables = [
-  "MQTT_BROKER_URL",
-  "MQTT_TOPIC_VALUES",
-  // Fügen Sie hier weitere erforderliche Umgebungsvariablen hinzu
-];
+// Funktion zum Lesen der Umgebungsvariablen aus .env
+const readEnvVariables = () => {
+  try {
+    const data = fs.readFileSync(".env", "utf8");
+    return data
+      .split("\n")
+      .filter((line) => line.trim() !== "" && !line.startsWith("#"))
+      .map((line) => line.split("=")[0]);
+  } catch (err) {
+    console.error(`Fehler beim Lesen der .env-Datei: ${err}`);
+    return [];
+  }
+};
+
+// Extrahieren der Umgebungsvariablen
+const requiredEnvVariables = readEnvVariables();
 
 // Überprüfen, ob alle erforderlichen Umgebungsvariablen definiert sind
 for (const varName of requiredEnvVariables) {
@@ -19,11 +31,19 @@ for (const varName of requiredEnvVariables) {
   }
 }
 
+// Überprüfen, ob das MQTT_TOPIC_VALUES definiert und nicht leer ist
+if (!process.env.MQTT_TOPIC_VALUES) {
+  console.error("Fehler: MQTT_TOPIC_VALUES ist nicht definiert.");
+  process.exit(1);
+}
+
+// Der restliche Teil Ihres Skripts...
+
 // Überprüfen, ob die Datenbanktabellen existieren
 const checkAndInsertDevice = (macAddress) => {
   return new Promise((resolve, reject) => {
     db.get(
-      "SELECT GeraeteID FROM Geraet WHERE GeraeteID = ?",
+      "SELECT UniqueDeviceID FROM Device WHERE UniqueDeviceID = ?",
       [macAddress],
       (err, row) => {
         if (err) {
@@ -32,7 +52,7 @@ const checkAndInsertDevice = (macAddress) => {
         }
         if (!row) {
           db.run(
-            "INSERT INTO Geraet (GeraeteID, GeraeteName) VALUES (?, ?)",
+            "INSERT INTO Device (UniqueDeviceID, DeviceName) VALUES (?, ?)",
             [macAddress, `Gerät ${macAddress}`],
             (insertErr) => {
               if (insertErr) {
@@ -76,12 +96,12 @@ mqttClient.on("message", (topic, message) => {
       const data = JSON.parse(message.toString());
       console.log(data);
 
-      if (data.Wert != null && data.mac != null && data.SensorTyp != null) {
+      if (data.Value != null && data.mac != null && data.SensorType != null) {
         checkAndInsertDevice(data.mac)
           .then(() => {
             // Finden Sie die DeviceID, die der MAC-Adresse entspricht
             db.get(
-              "SELECT DeviceID FROM Geraet WHERE GeraeteID = ?",
+              "SELECT DeviceID FROM Device WHERE UniqueDeviceID = ?",
               [data.mac],
               (err, row) => {
                 if (err) {
@@ -90,9 +110,9 @@ mqttClient.on("message", (topic, message) => {
                 }
                 if (row) {
                   const stmt = db.prepare(
-                    "INSERT INTO Messungen (DeviceID, SensorTyp, Wert) VALUES (?, ?, ?)"
+                    "INSERT INTO Measurements (DeviceID, SensorType, Value) VALUES (?, ?, ?)"
                   );
-                  stmt.run(row.DeviceID, data.SensorTyp, data.Wert);
+                  stmt.run(row.DeviceID, data.SensorType, data.Value);
                   stmt.finalize();
                   console.log(`Daten gespeichert: ${message.toString()}`);
                 }
