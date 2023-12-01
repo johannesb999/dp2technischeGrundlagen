@@ -2,28 +2,36 @@
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <WiFiManager.h>
-#include "config.h"  // Dies bindet Ihre Konfigurationsdatei ein
+#include "config.h"
 #include <ArduinoJson.h>
-
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-int led = LED_BUILTIN;
 
+// Pin-Definitionen
 #define SOIL_MOISTURE_PIN 32
 #define LDR_PIN 33
-
-// DHT Sensor Einstellungen
 #define DHTPIN 14
 #define DHTTYPE DHT22
-DHT dht(DHTPIN, DHTTYPE);
+#define LED_BUILTIN_PIN LED_BUILTIN
 
-// Initialisieren Sie den MQTT-Client
+// Leseintervalle
+const unsigned long TEMP_READ_INTERVAL = 1000;
+const unsigned long HUMIDITY_READ_INTERVAL = 3000;
+const unsigned long SOIL_MOISTURE_READ_INTERVAL = 2000;
+const unsigned long LIGHT_READ_INTERVAL = 4000;
+
+// Globale Variablen
+DHT dht(DHTPIN, DHTTYPE);
 WiFiClient espClient;
 PubSubClient client(espClient);
+unsigned long lastTempReadTime = 0;
+unsigned long lastHumidityReadTime = 0;
+unsigned long lastSoilMoistureReadTime = 0;
+unsigned long lastLightReadTime = 0;
 
-
+// Funktion zur Sensordatensendung
 void sendSensorData(const char* sensorType, float value) {
   StaticJsonDocument<200> doc;
   doc["mac"] = WiFi.macAddress();
@@ -38,148 +46,141 @@ void sendSensorData(const char* sensorType, float value) {
   Serial.println(jsonMessage);
 }
 
-
-void setup() {
-  Serial.begin(115200);
-  dht.begin();
-
-  WiFiManager wifiManager;
-  // wifiManager.resetSettings();
-  // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
-  if (!wifiManager.autoConnect("AutoConnectAP")) {
-    Serial.println("Fehler beim Verbinden und Timeout erreicht");
-    ESP.restart();  // Neustart des ESP
-  }
-
-  // Wenn die Verbindung hergestellt ist, drucken Sie die IP-Adresse
-  Serial.println("Verbunden mit WiFi");
-  Serial.println("IP-Adresse: ");
-  Serial.println(WiFi.localIP());
-
-  ArduinoOTA.setHostname("Johannesesp32WIFI");
-  ArduinoOTA.setPassword("admin");
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-  // ArduinoOTA.setPort(3232);
-
-  // OTA STUFF
-  ArduinoOTA
-    .onStart([]() {
-      String type;
-      if (ArduinoOTA.getCommand() == U_FLASH)
-        type = "sketch";
-      else  // U_SPIFFS
-        type = "filesystem";
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-
-  ArduinoOTA.begin();
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  // set LED to be an output pin
-  pinMode(led, OUTPUT);
-
-  // Verbinden Sie sich mit dem MQTT Broker
-  if (mqtt_port == 1883) {
-    client.setServer(mqtt_server, 1883);
-  } else {
-    client.setServer(mqtt_server, mqtt_port);
-  }
-  Serial.println(mqtt_port);
-  // client.setServer(mqtt_server, mqtt_port);
-}
-unsigned long lastTempReadTime = 0;
-unsigned long lastHumidityReadTime = 0;
-unsigned long lastSoilMoistureReadTime = 0;
-unsigned long lastLightReadTime = 0;
-
-const unsigned long tempReadInterval = 1000; 
-const unsigned long humidityReadInterval = 3000; 
-const unsigned long soilMoistureReadInterval = 2000; 
-const unsigned long lightReadInterval = 4000; 
-
-void loop() {
-  ArduinoOTA.handle();
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-
-  unsigned long currentTime = millis();
-
-  // Temperaturdaten auslesen und senden
-  if (currentTime - lastTempReadTime >= tempReadInterval) {
-    float t = dht.readTemperature();
-    if (!isnan(t)) {
-      sendSensorData("Temperature", t);
-      lastTempReadTime = currentTime;
-    }
-  }
-
-  // Luftfeuchtigkeitsdaten auslesen und senden
-  if (currentTime - lastHumidityReadTime >= humidityReadInterval) {
-    float h = dht.readHumidity();
-    if (!isnan(h)) {
-      sendSensorData("Humidity", h);
-      lastHumidityReadTime = currentTime;
-    }
-  }
-
-  // Bodenfeuchtigkeitsdaten auslesen und senden
-  if (currentTime - lastSoilMoistureReadTime >= soilMoistureReadInterval) {
-    int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-    sendSensorData("SoilMoisture", soilMoistureValue);
-    lastSoilMoistureReadTime = currentTime;
-  }
-
-  // Lichtdaten auslesen und senden
-  if (currentTime - lastLightReadTime >= lightReadInterval) {
-    int lightValue = analogRead(LDR_PIN);
-    sendSensorData("LDR", lightValue);
-    lastLightReadTime = currentTime;
-  }
-
-  // Kurze Pause, um Überlastung zu vermeiden
-  delay(1000);
-}
-
-
-
+// Funktion zum erneuten Verbinden mit MQTT
 void reconnect() {
-  // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Generate a random client ID
     String clientId = "ESP-Joe" + WiFi.macAddress();
-    // clientId += String(random(0xffff), HEX);
-    // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
-
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
       delay(5000);
     }
   }
+}
+
+// Setup-Funktion
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  setupWiFi();
+  setupOTA();
+  setupMQTT();
+  pinMode(LED_BUILTIN_PIN, OUTPUT);
+}
+
+// WiFi-Setup-Funktion
+void setupWiFi() {
+  WiFiManager wifiManager;
+  if (!wifiManager.autoConnect("AutoConnectAP")) {
+    Serial.println("Fehler beim Verbinden und Timeout erreicht");
+    ESP.restart();
+  }
+  Serial.println("Verbunden mit WiFi");
+  Serial.println("IP-Adresse: ");
+  Serial.println(WiFi.localIP());
+}
+
+// OTA-Setup-Funktion
+void setupOTA() {
+  ArduinoOTA.setHostname("Johannesesp32WIFI");
+  ArduinoOTA.setPassword("admin");
+
+  ArduinoOTA.onStart([]() {
+    String type = ArduinoOTA.getCommand() == U_FLASH ? "sketch" : "filesystem";
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() { Serial.println("\nEnd"); });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+
+  ArduinoOTA.begin();
+}
+
+// MQTT-Setup-Funktion
+void setupMQTT() {
+  client.setServer(mqtt_server, mqtt_port);
+}
+
+// Haupt-Loop-Funktion
+void loop() {
+  handleOTA();
+  handleMQTT();
+  readAndSendSensorData();
+}
+
+// OTA-Handling-Funktion
+void handleOTA() {
+  ArduinoOTA.handle();
+}
+
+// MQTT-Handling-Funktion
+void handleMQTT() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+}
+
+// Sensor-Daten-Lese- und -Sendefunktion
+void readAndSendSensorData() {
+  unsigned long currentTime = millis();
+  // Temperaturdaten
+  if (currentTime - lastTempReadTime >= TEMP_READ_INTERVAL) {
+    readAndSendTempData();
+  }
+  // Luftfeuchtigkeit
+  if (currentTime - lastHumidityReadTime >= HUMIDITY_READ_INTERVAL) {
+    readAndSendHumidityData();
+  }
+  // Bodenfeuchtigkeit
+  if (currentTime - lastSoilMoistureReadTime >= SOIL_MOISTURE_READ_INTERVAL) {
+    readAndSendSoilMoistureData();
+  }
+  // Licht
+  if (currentTime - lastLightReadTime >= LIGHT_READ_INTERVAL) {
+    readAndSendLightData();
+  }
+  delay(1000); // Kurze Pause, um Überlastung zu vermeiden
+}
+
+// Funktionen zum Lesen und Senden der einzelnen Sensordaten
+void readAndSendTempData() {
+  float t = dht.readTemperature();
+  if (!isnan(t)) {
+    sendSensorData("Temperature", t);
+    lastTempReadTime = millis();
+  }
+}
+
+void readAndSendHumidityData() {
+  float h = dht.readHumidity();
+  if (!isnan(h)) {
+    sendSensorData("Humidity", h);
+    lastHumidityReadTime = millis();
+  }
+}
+
+void readAndSendSoilMoistureData() {
+  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+  sendSensorData("SoilMoisture", soilMoistureValue);
+  lastSoilMoistureReadTime = millis();
+}
+
+void readAndSendLightData() {
+  int lightValue = analogRead(LDR_PIN);
+  sendSensorData("LDR", lightValue);
+  lastLightReadTime = millis();
 }
