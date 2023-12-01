@@ -6,18 +6,13 @@
 const char* ssid = "YOUR_WIFI";
 const char* password = "YOUR_PASSWORD";
 
-// const char* ssid = "YOUR_WIFI";
-// const char* password = "YOUR_PASSWORD";
 
 // MQTT Broker settings
 const char* mqtt_server = "mqtt.Your.Server";
 const int mqtt_port = YOUR_Port;
 
 // MQTT Topics
-const char* h_topic = "";
-const char* t_topic = "";
-const char* s_topic = "";
-const char* l_topic = "";
+const char* values_topic = "";
 
 
 
