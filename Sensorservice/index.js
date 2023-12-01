@@ -7,10 +7,8 @@ const clientId = `mqtt_${uuidv4()}`;
 
 const requiredEnvVariables = [
   "MQTT_BROKER_URL",
-  "MQTT_TOPIC_TEMPERATUR",
-  "MQTT_TOPIC_FEUCHTIGKEIT",
-  "MQTT_TOPIC_SOILMOISTURE",
-  "MQTT_TOPIC_LICHT",
+  "MQTT_TOPIC_VALUES",
+  // "MQTT_TOPIC_LOGS",
   // Fügen Sie hier weitere erforderliche Umgebungsvariablen hinzu
 ];
 
@@ -33,102 +31,30 @@ mqttClient.on("connect", function () {
   console.log(logMessage);
 
   // Subscribe auf Topics
-  mqttClient.subscribe("dp2/temperature", function (err) {
+  mqttClient.subscribe(process.env.MQTT_TOPIC_VALUES, function (err) {
     if (!err) {
-      console.log('Erfolgreich auf Thema "dp2/temperature" subscribed');
-    }
-  });
-  mqttClient.subscribe("dp2/humidity", function (err) {
-    if (!err) {
-      console.log('Erfolgreich auf Thema "dp2/humidity" subscribed');
-    }
-  });
-  mqttClient.subscribe("dp2/soilMoisture", function (err) {
-    if (!err) {
-      console.log('Erfolgreich auf Thema "dp2/soilMoisture" subscribed');
-    }
-  });
-  mqttClient.subscribe("dp2/light", function (err) {
-    if (!err) {
-      console.log('Erfolgreich auf Thema "dp2/light" subscribed');
+      console.log(
+        `Erfolgreich auf Topic "${process.env.MQTT_TOPIC_VALUES}" subscribed`
+      );
     }
   });
 });
 
 mqttClient.on("message", (topic, message) => {
-  if (topic === process.env.MQTT_TOPIC_TEMPERATUR) {
+  if (topic === process.env.MQTT_TOPIC_VALUES) {
     try {
       const data = JSON.parse(message.toString());
       console.log(data);
 
-      if (data.temperature != null && data.mac != null) {
+      if (data.Wert != null && data.mac != null && data.SensorTyp != null) {
         const stmt = db.prepare(
-          "INSERT INTO temperature_data (temperature, mac) VALUES (?, ?)"
+          "INSERT INTO Messungen (SensorTyp, Wert, mac) VALUES (?, ?, ?)"
         );
-        stmt.run(data.temperature, data.mac);
+        stmt.run(data.SensorTyp, data.Wert, data.mac);
         stmt.finalize();
         console.log(`Daten gespeichert: ${message.toString()}`);
       } else {
-        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
-      }
-    } catch (e) {
-      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
-    }
-  }
-
-  if (topic === process.env.MQTT_TOPIC_FEUCHTIGKEIT) {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log(data);
-
-      if (data.humidity != null && data.mac != null) {
-        const stmt = db.prepare(
-          "INSERT INTO humidity_data (humidity, mac) VALUES (?, ?)"
-        );
-        stmt.run(data.humidity, data.mac);
-        stmt.finalize();
-        console.log(`Daten gespeichert: ${message.toString()}`);
-      } else {
-        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
-      }
-    } catch (e) {
-      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
-    }
-  }
-
-  if (topic === process.env.MQTT_TOPIC_SOILMOISTURE) {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log(data);
-
-      if (data.soilMoisture != null && data.mac != null) {
-        const stmt = db.prepare(
-          "INSERT INTO soilMoisture_data (soilMoisture, mac) VALUES (?, ?)"
-        );
-        stmt.run(data.soilMoisture, data.mac);
-        stmt.finalize();
-        console.log(`Daten gespeichert: ${message.toString()}`);
-      } else {
-        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
-      }
-    } catch (e) {
-      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
-    }
-  }
-  if (topic === process.env.MQTT_TOPIC_LICHT) {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log(data);
-
-      if (data.light != null && data.mac != null) {
-        const stmt = db.prepare(
-          "INSERT INTO light_data (light, mac) VALUES (?, ?)"
-        );
-        stmt.run(data.light, data.mac);
-        stmt.finalize();
-        console.log(`Daten gespeichert: ${message.toString()}`);
-      } else {
-        console.log("NULL-Werte erkannt, Datensatz wird ignoriert.");
+        console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
       }
     } catch (e) {
       console.error(`Fehler beim Parsen der Nachricht: ${e}`);

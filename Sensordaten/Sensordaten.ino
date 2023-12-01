@@ -28,6 +28,7 @@ void setup() {
   dht.begin();
 
   WiFiManager wifiManager;
+  // wifiManager.resetSettings();
   // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
   if (!wifiManager.autoConnect("AutoConnectAP")) {
     Serial.println("Fehler beim Verbinden und Timeout erreicht");
@@ -117,37 +118,50 @@ void loop() {
   Serial.println("°C ");
   String clientId = "ESP-Johannes" + WiFi.macAddress();
 
+
+
+
+
+
+
+
+
   // Erstellt ein JSON-Dokument für die Temperatur
-  StaticJsonDocument<200> tempDoc;
+  StaticJsonDocument<300> tempDoc;
   tempDoc["mac"] = WiFi.macAddress();
-  tempDoc["temperature"] = t;
+  tempDoc["Wert"] = t;
+  tempDoc["SensorTyp"] = "Temperature";
+
   char tempJsonMessage[200];
   serializeJson(tempDoc, tempJsonMessage);
-  client.publish(temperature_topic, tempJsonMessage);
+  client.publish(values_topic, tempJsonMessage);
 
   // Erstellt ein separates JSON-Dokument für die Luftfeuchtigkeit
-  StaticJsonDocument<200> humDoc;
+  StaticJsonDocument<300> humDoc;
   humDoc["mac"] = WiFi.macAddress();
-  humDoc["humidity"] = h;
+  humDoc["Wert"] = h;
+  humDoc["SensorTyp"] = "Humidity";
   char humJsonMessage[200];
   serializeJson(humDoc, humJsonMessage);
-  client.publish(humidity_topic, humJsonMessage);
+  client.publish(values_topic, humJsonMessage);
 
   // Erstellen eines JSON-Dokuments für den Bodenfeuchtesensor
-  StaticJsonDocument<200> soilMoistureDoc;
+  StaticJsonDocument<300> soilMoistureDoc;
   soilMoistureDoc["mac"] = WiFi.macAddress();
-  soilMoistureDoc["soilMoisture"] = soilMoistureValue;
+  soilMoistureDoc["Wert"] = soilMoistureValue;
+  soilMoistureDoc["SensorTyp"] = "SoilMoisture";
   char soilMoistureJsonMessage[200];
   serializeJson(soilMoistureDoc, soilMoistureJsonMessage);
-  client.publish(soilMoisture_topic, soilMoistureJsonMessage);
+  client.publish(values_topic, soilMoistureJsonMessage);
 
   // Erstellen eines JSON-Dokuments für den LDR
-  StaticJsonDocument<200> lightDoc;
+  StaticJsonDocument<300> lightDoc;
   lightDoc["mac"] = WiFi.macAddress();
-  lightDoc["lightLevel"] = lightValue;
+  lightDoc["Wert"] = lightValue;
+  lightDoc["SensorTyp"] = "LDR";
   char lightJsonMessage[200];
   serializeJson(lightDoc, lightJsonMessage);
-  client.publish(light_topic, lightJsonMessage);
+  client.publish(values_topic, lightJsonMessage);
 
 
   digitalWrite(led, HIGH);  // turn the LED on (HIGH is the voltage level)
