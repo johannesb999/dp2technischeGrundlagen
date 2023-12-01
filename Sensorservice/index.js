@@ -75,14 +75,26 @@ mqttClient.on("message", (topic, message) => {
       console.log(data);
       // Überprüfen und Einfügen des Geräts, falls nicht vorhanden
       checkAndInsertDevice(data.mac);
-
       if (data.Wert != null && data.mac != null && data.SensorTyp != null) {
-        const stmt = db.prepare(
-          "INSERT INTO Messungen (SensorTyp, Wert, mac) VALUES (?, ?, ?)"
+        // Finden Sie die DeviceID, die der MAC-Adresse entspricht
+        db.get(
+          "SELECT DeviceID FROM Geraet WHERE GeraeteID = ?",
+          [data.mac],
+          (err, row) => {
+            if (err) {
+              console.error(err.message);
+              return;
+            }
+            if (row) {
+              const stmt = db.prepare(
+                "INSERT INTO Messungen (DeviceID, SensorTyp, Wert) VALUES (?, ?, ?)"
+              );
+              stmt.run(row.DeviceID, data.SensorTyp, data.Wert);
+              stmt.finalize();
+              console.log(`Daten gespeichert: ${message.toString()}`);
+            }
+          }
         );
-        stmt.run(data.SensorTyp, data.Wert, data.mac);
-        stmt.finalize();
-        console.log(`Daten gespeichert: ${message.toString()}`);
       } else {
         console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
       }

@@ -9,12 +9,14 @@ const setupDatabase = () => {
 
   db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS Messungen (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          Wert REAL,
-          SensorTyp TEXT,
-          mac TEXT,
-          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`);
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        DeviceID INTEGER,
+        Wert REAL,
+        SensorTyp TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (DeviceID) REFERENCES Geraet (DeviceID)
+      )`);
+
     //
     db.run(`CREATE TABLE IF NOT EXISTS User (
             UserID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,9 +35,10 @@ const setupDatabase = () => {
           )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS Geraet (
-            GeraeteID TEXT PRIMARY KEY,
-            OwnerID INTEGER,  
-            GeraeteName TEXT,
+            DeviceID INTEGER PRIMARY KEY AUTOINCREMENT,
+            GeraeteID TEXT NOT NULL UNIQUE,
+            OwnerID INTEGER,
+            GeraeteName TEXT ,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
             Raum TEXT,
             FOREIGN KEY (OwnerID) REFERENCES User (UserID)
