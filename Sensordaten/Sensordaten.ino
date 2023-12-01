@@ -23,6 +23,22 @@ DHT dht(DHTPIN, DHTTYPE);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+
+void sendSensorData(const char* sensorType, float value) {
+  StaticJsonDocument<200> doc;
+  doc["mac"] = WiFi.macAddress();
+  doc["SensorTyp"] = sensorType;
+  doc["Wert"] = value;
+
+  char jsonMessage[512];
+  serializeJson(doc, jsonMessage);
+  client.publish(values_topic, jsonMessage);
+
+  Serial.print("Send data: ");
+  Serial.println(jsonMessage);
+}
+
+
 void setup() {
   Serial.begin(115200);
   dht.begin();
@@ -88,89 +104,61 @@ void setup() {
   Serial.println(mqtt_port);
   // client.setServer(mqtt_server, mqtt_port);
 }
+unsigned long lastTempReadTime = 0;
+unsigned long lastHumidityReadTime = 0;
+unsigned long lastSoilMoistureReadTime = 0;
+unsigned long lastLightReadTime = 0;
+
+const unsigned long tempReadInterval = 1000; 
+const unsigned long humidityReadInterval = 3000; 
+const unsigned long soilMoistureReadInterval = 2000; 
+const unsigned long lightReadInterval = 4000; 
 
 void loop() {
-  ArduinoOTA.handle();  // OTA-Handling als erstes
+  ArduinoOTA.handle();
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
+  unsigned long currentTime = millis();
+
+  // Temperaturdaten auslesen und senden
+  if (currentTime - lastTempReadTime >= tempReadInterval) {
+    float t = dht.readTemperature();
+    if (!isnan(t)) {
+      sendSensorData("Temperature", t);
+      lastTempReadTime = currentTime;
+    }
   }
-  int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-  int lightValue = analogRead(LDR_PIN);
-  Serial.print("Soil Moisture: ");
-  Serial.println(soilMoistureValue);
-  Serial.print("Light: ");
-  Serial.println(lightValue);
+
+  // Luftfeuchtigkeitsdaten auslesen und senden
+  if (currentTime - lastHumidityReadTime >= humidityReadInterval) {
+    float h = dht.readHumidity();
+    if (!isnan(h)) {
+      sendSensorData("Humidity", h);
+      lastHumidityReadTime = currentTime;
+    }
+  }
+
+  // Bodenfeuchtigkeitsdaten auslesen und senden
+  if (currentTime - lastSoilMoistureReadTime >= soilMoistureReadInterval) {
+    int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
+    sendSensorData("SoilMoisture", soilMoistureValue);
+    lastSoilMoistureReadTime = currentTime;
+  }
+
+  // Lichtdaten auslesen und senden
+  if (currentTime - lastLightReadTime >= lightReadInterval) {
+    int lightValue = analogRead(LDR_PIN);
+    sendSensorData("LDR", lightValue);
+    lastLightReadTime = currentTime;
+  }
+
+  // Kurze Pause, um Überlastung zu vermeiden
   delay(1000);
-
-  // Serial prints hinzugefügt, um Daten zu sehen
-  Serial.print("Humidity: ");
-  Serial.print(h);
-  Serial.print("%  Temperature: ");
-  Serial.print(t);
-  Serial.println("°C ");
-  String clientId = "ESP-Johannes" + WiFi.macAddress();
-
-
-
-
-
-
-
-
-
-  // Erstellt ein JSON-Dokument für die Temperatur
-  StaticJsonDocument<300> tempDoc;
-  tempDoc["mac"] = WiFi.macAddress();
-  tempDoc["Wert"] = t;
-  tempDoc["SensorTyp"] = "Temperature";
-
-  char tempJsonMessage[200];
-  serializeJson(tempDoc, tempJsonMessage);
-  client.publish(values_topic, tempJsonMessage);
-
-  // Erstellt ein separates JSON-Dokument für die Luftfeuchtigkeit
-  StaticJsonDocument<300> humDoc;
-  humDoc["mac"] = WiFi.macAddress();
-  humDoc["Wert"] = h;
-  humDoc["SensorTyp"] = "Humidity";
-  char humJsonMessage[200];
-  serializeJson(humDoc, humJsonMessage);
-  client.publish(values_topic, humJsonMessage);
-
-  // Erstellen eines JSON-Dokuments für den Bodenfeuchtesensor
-  StaticJsonDocument<300> soilMoistureDoc;
-  soilMoistureDoc["mac"] = WiFi.macAddress();
-  soilMoistureDoc["Wert"] = soilMoistureValue;
-  soilMoistureDoc["SensorTyp"] = "SoilMoisture";
-  char soilMoistureJsonMessage[200];
-  serializeJson(soilMoistureDoc, soilMoistureJsonMessage);
-  client.publish(values_topic, soilMoistureJsonMessage);
-
-  // Erstellen eines JSON-Dokuments für den LDR
-  StaticJsonDocument<300> lightDoc;
-  lightDoc["mac"] = WiFi.macAddress();
-  lightDoc["Wert"] = lightValue;
-  lightDoc["SensorTyp"] = "LDR";
-  char lightJsonMessage[200];
-  serializeJson(lightDoc, lightJsonMessage);
-  client.publish(values_topic, lightJsonMessage);
-
-
-  digitalWrite(led, HIGH);  // turn the LED on (HIGH is the voltage level)
-  delay(100);               // wait for a half second
-  digitalWrite(led, LOW);   // turn the LED off by making the voltage LOW
-  delay(100);               // wait for a half second
-
-  delay(5000);
 }
+
 
 
 void reconnect() {

@@ -8,7 +8,6 @@ const clientId = `mqtt_${uuidv4()}`;
 const requiredEnvVariables = [
   "MQTT_BROKER_URL",
   "MQTT_TOPIC_VALUES",
-  // "MQTT_TOPIC_LOGS",
   // Fügen Sie hier weitere erforderliche Umgebungsvariablen hinzu
 ];
 
@@ -19,6 +18,35 @@ for (const varName of requiredEnvVariables) {
     process.exit(1); // Beendet das Skript mit einem Fehlercode
   }
 }
+
+// Überprüfen, ob die Datenbanktabellen existieren
+const checkAndInsertDevice = (macAddress) => {
+  // Überprüfen, ob das Gerät bereits existiert
+  db.get(
+    "SELECT GeraeteID FROM Geraet WHERE GeraeteID = ?",
+    [macAddress],
+    (err, row) => {
+      if (err) {
+        console.error(err.message);
+        return;
+      }
+      if (!row) {
+        // Das Gerät existiert noch nicht, also fügen wir es ein
+        db.run(
+          "INSERT INTO Geraet (GeraeteID, GeraeteName) VALUES (?, ?)",
+          [macAddress, `Gerät ${macAddress}`],
+          (insertErr) => {
+            if (insertErr) {
+              console.error(insertErr.message);
+            } else {
+              console.log(`Neues Gerät hinzugefügt: ${macAddress}`);
+            }
+          }
+        );
+      }
+    }
+  );
+};
 
 // MQTT STUFF:
 
@@ -45,6 +73,8 @@ mqttClient.on("message", (topic, message) => {
     try {
       const data = JSON.parse(message.toString());
       console.log(data);
+      // Überprüfen und Einfügen des Geräts, falls nicht vorhanden
+      checkAndInsertDevice(data.mac);
 
       if (data.Wert != null && data.mac != null && data.SensorTyp != null) {
         const stmt = db.prepare(

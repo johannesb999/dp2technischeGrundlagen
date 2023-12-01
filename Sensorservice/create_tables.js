@@ -34,8 +34,8 @@ const setupDatabase = () => {
 
     db.run(`CREATE TABLE IF NOT EXISTS Geraet (
             GeraeteID TEXT PRIMARY KEY,
-            OwnerID INTEGER NOT NULL,
-            GeraeteName TEXT NOT NULL,
+            OwnerID INTEGER,  
+            GeraeteName TEXT,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
             Raum TEXT,
             FOREIGN KEY (OwnerID) REFERENCES User (UserID)
