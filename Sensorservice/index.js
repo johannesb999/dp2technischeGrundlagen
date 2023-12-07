@@ -5,6 +5,72 @@ const db = setupDatabase();
 const { v4: uuidv4 } = require("uuid");
 const fs = require("fs");
 const clientId = `mqtt_${uuidv4()}`;
+const OpenAI = require("openai");
+const openai = new OpenAI();
+//API STUFF
+const express = require("express");
+const app = express();
+const bodyParser = require("body-parser");
+
+const rawBodyParser = bodyParser.raw({ type: "image/jpeg", limit: "10mb" });
+const images = [];
+
+// Define a route for the root URL
+app.get("/", (req, res) => {
+  res.send("Hello, world!");
+});
+app.post("/api/addpicture", rawBodyParser, (req, res) => {
+  if (req.body && req.body.length) {
+    console.log(`Empfangene Bildgröße: ${req.body.length} Bytes`);
+    res.send("Bild erfolgreich empfangen!");
+    images.push(req.body);
+    // save the image into an file
+    console.log(req.body);
+    main(req.body);
+  } else {
+    res.status(400).send("Keine Daten empfangen.");
+  }
+});
+app.get("/api/getpicture", (req, res) => {
+  // response as imaga/jpeg
+  res.set("Content-Type", "image/jpeg");
+  res.send(images[images.length - 1]);
+});
+// Start the server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+//API STUFF ENDE
+
+async function main(image) {
+  // convert from uint8 Array butter to base64
+  if (!image) return;
+  const base64_image = Buffer.from(image).toString("base64");
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4-vision-preview",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: 'specify the plant. response as json in this format: {"plant": "plantname"}',
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${base64_image}`,
+            },
+          },
+        ],
+      },
+    ],
+    max_tokens: 300,
+  });
+  console.log(response.choices[0]);
+}
 
 // Funktion zum Lesen der Umgebungsvariablen aus .env
 const readEnvVariables = () => {
