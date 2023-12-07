@@ -24,6 +24,8 @@ void setup() {
 
   // WiFiManager-Instanz
   WiFiManager wifiManager;
+  // wifiManager.resetSettings();
+
   wifiManager.autoConnect(); // ssid und password werden aus der config.h verwendet
 
   Serial.println("WiFi connected");
