@@ -108,6 +108,7 @@ void setup() {
 }
 
 // OTA END
+
 unsigned long lastTempReadTime = 0;
 unsigned long lastHumidityReadTime = 0;
 unsigned long lastSoilMoistureReadTime = 0;

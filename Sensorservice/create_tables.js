@@ -1,7 +1,7 @@
 const sqlite3 = require("sqlite3").verbose();
 
 const setupDatabase = () => {
-  let db = new sqlite3.Database("./mqtt_data.db", (err) => {
+  let db = new sqlite3.Database(`./${process.env.databaseName}.db`, (err) => {
     if (err) {
       console.error(err.message);
     }

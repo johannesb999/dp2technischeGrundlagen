@@ -9,7 +9,7 @@ const clientId = `mqtt_${uuidv4()}`;
 // Funktion zum Lesen der Umgebungsvariablen aus .env
 const readEnvVariables = () => {
   try {
-    const data = fs.readFileSync(".env", "utf8");
+    const data = fs.readFileSync(".env.example", "utf8");
     return data
       .split("\n")
       .filter((line) => line.trim() !== "" && !line.startsWith("#"))
@@ -90,38 +90,41 @@ mqttClient.on("connect", function () {
   });
 });
 
-mqttClient.on("message", (topic, message) => {
+mqttClient.on("message", async (topic, message) => {
   if (topic === process.env.MQTT_TOPIC_VALUES) {
     try {
       const data = JSON.parse(message.toString());
       console.log(data);
 
       if (data.Value != null && data.mac != null && data.SensorType != null) {
-        checkAndInsertDevice(data.mac)
-          .then(() => {
-            // Finden Sie die DeviceID, die der MAC-Adresse entspricht
+        try {
+          await checkAndInsertDevice(data.mac);
+          // Finden Sie die DeviceID, die der MAC-Adresse entspricht
+          const row = await new Promise((resolve, reject) => {
             db.get(
               "SELECT DeviceID FROM Device WHERE UniqueDeviceID = ?",
               [data.mac],
               (err, row) => {
                 if (err) {
-                  console.error(err.message);
-                  return;
-                }
-                if (row) {
-                  const stmt = db.prepare(
-                    "INSERT INTO Measurements (DeviceID, SensorType, Value) VALUES (?, ?, ?)"
-                  );
-                  stmt.run(row.DeviceID, data.SensorType, data.Value);
-                  stmt.finalize();
-                  console.log(`Daten gespeichert: ${message.toString()}`);
+                  reject(err);
+                } else {
+                  resolve(row);
                 }
               }
             );
-          })
-          .catch((error) => {
-            console.error(`Fehler bei der Geräteregistrierung: ${error}`);
           });
+
+          if (row) {
+            const stmt = db.prepare(
+              "INSERT INTO Measurements (DeviceID, SensorType, Value) VALUES (?, ?, ?)"
+            );
+            stmt.run(row.DeviceID, data.SensorType, data.Value);
+            stmt.finalize();
+            console.log(`Daten gespeichert: ${message.toString()}`);
+          }
+        } catch (error) {
+          console.error(`Fehler bei der Datenverarbeitung: ${error}`);
+        }
       } else {
         console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
       }
