@@ -56,7 +56,7 @@ async function main(image) {
         content: [
           {
             type: "text",
-            text: 'specify the plant. response as json in this format: {"plant": "plantname"}',
+            text: 'identify the plant as good as you can. response as json in this format: {"plant": "plantname"} if its is not possible to identify the plant, please respond with json: {"plant": "unknown"}',
           },
           {
             type: "image_url",
