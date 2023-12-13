@@ -1,24 +1,33 @@
 require("dotenv").config();
 const mqtt = require("mqtt");
-const setupDatabase = require("./create_tables");
-const db = setupDatabase();
+const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const fs = require("fs");
-const clientId = `mqtt_${uuidv4()}`;
 const OpenAI = require("openai");
 const openai = new OpenAI();
+const clientId = `mqtt_${uuidv4()}`;
+const fs = require("fs");
+// MongoDB models
+const Device = require("./Models/Device");
+const Measurement = require("./Models/Measurement");
+
 //API STUFF
 const express = require("express");
-const app = express();
 const bodyParser = require("body-parser");
-
+const app = express();
 const rawBodyParser = bodyParser.raw({ type: "image/jpeg", limit: "10mb" });
 const images = [];
 
-// Define a route for the root URL
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
 app.get("/", (req, res) => {
   res.send("Hello, world!");
 });
+
+//api endpoints
 app.post("/api/addpicture", rawBodyParser, (req, res) => {
   if (req.body && req.body.length) {
     console.log(`Empfangene Bildgröße: ${req.body.length} Bytes`);
@@ -31,26 +40,22 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
     res.status(400).send("Keine Daten empfangen.");
   }
 });
+
 app.get("/api/getpicture", (req, res) => {
   // response as imaga/jpeg
   res.set("Content-Type", "image/jpeg");
   res.send(images[images.length - 1]);
 });
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
 
 app.get("/api/measurements", async (req, res) => {
   try {
-    const rows = await db.all(
-      "SELECT * FROM Measurements ORDER BY timestamp DESC LIMIT 20"
-    );
-    if (rows.length === 0) {
+    const measurements = await Measurement.find()
+      .sort({ timestamp: -1 })
+      .limit(20);
+    if (measurements.length === 0) {
       res.status(404).send({ error: "Keine Daten gefunden" });
     } else {
-      res.status(200).json(rows);
+      res.status(200).json(measurements);
     }
   } catch (err) {
     res.status(500).send({ error: "Fehler beim Abrufen der Daten" });
@@ -119,8 +124,6 @@ if (!process.env.MQTT_TOPIC_VALUES) {
   process.exit(1);
 }
 
-// Der restliche Teil Ihres Skripts...
-
 // Überprüfen, ob die Datenbanktabellen existieren
 const checkAndInsertDevice = (macAddress) => {
   return new Promise((resolve, reject) => {
@@ -174,44 +177,33 @@ mqttClient.on("connect", function () {
 
 mqttClient.on("message", async (topic, message) => {
   if (topic === process.env.MQTT_TOPIC_VALUES) {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log(data);
-
-      if (data.Value != null && data.mac != null && data.SensorType != null) {
-        try {
-          await checkAndInsertDevice(data.mac);
-          // Finden Sie die DeviceID, die der MAC-Adresse entspricht
-          const row = await new Promise((resolve, reject) => {
-            db.get(
-              "SELECT DeviceID FROM Device WHERE UniqueDeviceID = ?",
-              [data.mac],
-              (err, row) => {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve(row);
-                }
-              }
-            );
-          });
-
-          if (row) {
-            const stmt = db.prepare(
-              "INSERT INTO Measurements (DeviceID, SensorType, Value) VALUES (?, ?, ?)"
-            );
-            stmt.run(row.DeviceID, data.SensorType, data.Value);
-            stmt.finalize();
-            console.log(`Daten gespeichert: ${message.toString()}`);
-          }
-        } catch (error) {
-          console.error(`Fehler bei der Datenverarbeitung: ${error}`);
-        }
-      } else {
-        console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
+    // Verarbeiten der MQTT-Nachricht mit Mongoose
+    const data = JSON.parse(message.toString());
+    if (data.Value != null && data.mac != null && data.SensorType != null) {
+      let device = await Device.findOne({ UniqueDeviceID: data.mac });
+      if (!device) {
+        device = new Device({
+          UniqueDeviceID: data.mac,
+          DeviceName: `Gerät ${data.mac}`,
+        });
+        await device.save();
       }
-    } catch (e) {
-      console.error(`Fehler beim Parsen der Nachricht: ${e}`);
+
+      const measurement = new Measurement({
+        DeviceID: device._id,
+        SensorType: data.SensorType,
+        Value: data.Value,
+      });
+      await measurement.save();
+      console.log(`Daten gespeichert: ${message.toString()}`);
+    } else {
+      console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
     }
   }
+});
+
+// Start the server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
