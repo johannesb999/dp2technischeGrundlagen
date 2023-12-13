@@ -41,6 +41,22 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+app.get("/api/measurements", async (req, res) => {
+  try {
+    const rows = await db.all(
+      "SELECT * FROM Measurements ORDER BY timestamp DESC LIMIT 20"
+    );
+    if (rows.length === 0) {
+      res.status(404).send({ error: "Keine Daten gefunden" });
+    } else {
+      res.status(200).json(rows);
+    }
+  } catch (err) {
+    res.status(500).send({ error: "Fehler beim Abrufen der Daten" });
+  }
+});
+
 //API STUFF ENDE
 
 async function main(image) {

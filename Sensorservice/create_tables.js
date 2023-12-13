@@ -76,7 +76,7 @@ const setupDatabase = () => {
           )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS Measurements (
-        MeasurementID TEXT PRIMARY KEY,
+        MeasurementID INTEGER PRIMARY KEY,
         DeviceID INTEGER,
         Value REAL,
         SensorType TEXT,
