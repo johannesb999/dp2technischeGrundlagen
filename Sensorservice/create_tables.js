@@ -1,14 +1,11 @@
 const sqlite3 = require("sqlite3").verbose();
 
 const setupDatabase = () => {
-  let db = new sqlite3.Database(
-    `./${process.env.DATABASE_FILENAME}.db`,
-    (err) => {
-      if (err) {
-        console.error(err.message);
-      }
+  let db = new sqlite3.Database(`./${process.env.databaseName}.db`, (err) => {
+    if (err) {
+      console.error(err.message);
     }
-  );
+  });
 
   db.serialize(() => {
     // Neue Tabellen für Rollen, Status und GruppeNutzer
@@ -79,7 +76,7 @@ const setupDatabase = () => {
           )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS Measurements (
-        MeasurementID INTEGER PRIMARY KEY,
+        MeasurementID TEXT PRIMARY KEY,
         DeviceID INTEGER,
         Value REAL,
         SensorType TEXT,
