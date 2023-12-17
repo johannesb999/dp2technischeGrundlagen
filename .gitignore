@@ -1,4 +1,5 @@
 
-Sensordaten/Sensors.h
-Sensordaten/Sensors.h
-Sensordaten/Sensros.cpp
+config.h
+config.h.in
+config.log
+*.h
