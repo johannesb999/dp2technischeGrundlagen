@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
 const openai = new OpenAI();
 const clientId = `mqtt_${uuidv4()}`;
-const fs = require("fs");
+
 // MongoDB models
 const Device = require("./Models/Device");
 const Measurement = require("./Models/Measurement");

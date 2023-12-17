@@ -1,4 +1,6 @@
 #include "NetworkManager.h"
+#include <WiFiManager.h>
+
 
 NetworkManager::NetworkManager() : mqttClient(espClient) {}
 
@@ -22,6 +24,7 @@ PubSubClient& NetworkManager::getMqttClient() {
 
 void NetworkManager::connectToWifi() {
     WiFi.begin(ssid, password);
+    
     Serial.print("Verbindung zu WiFi herstellen");
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
@@ -50,6 +53,7 @@ void NetworkManager::handleMqttReconnect() {
 }
 
 void NetworkManager::setupOTA() {
-    ArduinoOTA.setHostname("MeinESP32");
+    ArduinoOTA.setHostname("JohannesESP1");
     ArduinoOTA.begin();
 }
+

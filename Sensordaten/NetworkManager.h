@@ -7,12 +7,14 @@
 #include <ArduinoOTA.h>
 #include "config.h"
 
+
 class NetworkManager {
 public:
     NetworkManager();
     void setup();
     void loop();
     PubSubClient& getMqttClient();
+    
 
 private:
     WiFiClient espClient;

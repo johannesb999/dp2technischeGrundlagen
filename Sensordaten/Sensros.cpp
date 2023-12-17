@@ -1,14 +1,15 @@
 #include "Sensors.h"
 
 void TemperatureSensor::readAndSend(PubSubClient& client) {
-    float temp = dht.readTemperature();
+    float temp = _dht->readTemperature();
+    Serial.printf("the temperature is %f", temp);
     if (!isnan(temp)) {
         sendSensorData(client, temp);
     }
 }
 
 void HumiditySensor::readAndSend(PubSubClient& client) {
-    float humidity = dht.readHumidity();
+    float humidity = _dht->readHumidity();
     if (!isnan(humidity)) {
         sendSensorData(client, humidity);
     }
