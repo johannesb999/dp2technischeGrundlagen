@@ -27,8 +27,8 @@ PubSubClient client(espClient);
 void sendSensorData(const char* sensorType, float value) {
   StaticJsonDocument<200> doc;
   doc["mac"] = WiFi.macAddress();
-  doc["SensorType"] = sensorType; 
-  doc["Value"] = value;           
+  doc["SensorType"] = sensorType;
+  doc["Value"] = value;
 
   char jsonMessage[512];
   serializeJson(doc, jsonMessage);
@@ -158,7 +158,7 @@ void loop() {
   }
 
   // Kurze Pause, um Überlastung zu vermeiden
-  delay(1000);
+  // delay(1000);
 }
 
 
