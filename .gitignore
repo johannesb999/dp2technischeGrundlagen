@@ -3,3 +3,7 @@ config.h
 config.h.in
 config.log
 *.h
+.env
+*.env
+node_modules
+```
