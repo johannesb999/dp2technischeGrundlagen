@@ -22,7 +22,10 @@
                         value,
                         name: index.toString()
                     }));
-                    setChartData(key, data);
+                    let nicedata = data.slice(0, 10);
+                    let reallynicedata = nicedata.reverse();
+                    console.log(data);
+                    setChartData(key, reallynicedata);
                 });
             }
         } catch (error) {
