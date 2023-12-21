@@ -46,7 +46,7 @@ void setup() {
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
   // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
-  if (!wifiManager.autoConnect("AutoConnectAP")) {
+  if (!wifiManager.autoConnect("Esp32Plantmonit1")) {
     Serial.println("Fehler beim Verbinden und Timeout erreicht");
     ESP.restart();  // Neustart des ESP
   }

@@ -77,7 +77,7 @@ async function main(image) {
         content: [
           {
             type: "text",
-            text: 'identify the plant as good as you can. response as json in this format: {"plant": "plantname"} if its is not possible to identify the plant, please respond with json: {"plant": "unknown"}',
+            text: 'Tell me the name of the plant you see. Check if the plant do have pests, rot, bends or cracks. If something is detected, also output the disease and suggest in three sentences what can be done about it. response as json in this format: {"plant": "plantname", "pests": "","Disease": "", "Rot": "", "Kinks": "","Cracks": "", "Suggestion": ""} . Answer in string should be yes or no. If you cant detect the plant just use Aphelandra squarrosa (zebra plant) as default and check for diseases',
           },
           {
             type: "image_url",
@@ -124,37 +124,6 @@ if (!process.env.MQTT_TOPIC_VALUES) {
   process.exit(1);
 }
 
-// Überprüfen, ob die Datenbanktabellen existieren
-const checkAndInsertDevice = (macAddress) => {
-  return new Promise((resolve, reject) => {
-    db.get(
-      "SELECT UniqueDeviceID FROM Device WHERE UniqueDeviceID = ?",
-      [macAddress],
-      (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        if (!row) {
-          db.run(
-            "INSERT INTO Device (UniqueDeviceID, DeviceName) VALUES (?, ?)",
-            [macAddress, `Gerät ${macAddress}`],
-            (insertErr) => {
-              if (insertErr) {
-                reject(insertErr);
-                return;
-              }
-              resolve();
-            }
-          );
-        } else {
-          resolve();
-        }
-      }
-    );
-  });
-};
-
 // MQTT STUFF:
 
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER_URL, { clientId });
@@ -185,6 +154,7 @@ mqttClient.on("message", async (topic, message) => {
         device = new Device({
           UniqueDeviceID: data.mac,
           DeviceName: `Gerät ${data.mac}`,
+          OwnerID: "1",
         });
         await device.save();
       }

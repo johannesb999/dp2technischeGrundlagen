@@ -25,7 +25,7 @@ bool takePicture = false;
 void initWiFi() {
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
-  bool connected = wifiManager.autoConnect("AutoConnectAP");
+  bool connected = wifiManager.autoConnect("EspCam32J");
   Serial.println("Connected to WiFi.");
 }
 
@@ -54,8 +54,8 @@ void initCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if (psramFound()) {
-    config.frame_size = FRAMESIZE_VGA;  // we dont need much quality
-    config.jpeg_quality = 10;
+    config.frame_size = FRAMESIZE_VGA;  
+    config.jpeg_quality = 15;
     config.fb_count = 2;
   } else {
     config.frame_size = FRAMESIZE_SVGA;  // turn quality down al the way
@@ -84,7 +84,8 @@ void setup() {
   s->set_gain_ctrl(s, 1);      // auto gain on
   s->set_exposure_ctrl(s, 1);  // auto exposure on
   s->set_awb_gain(s, 1);       // Auto White Balance enable (0 or 1)
-  s->set_brightness(s, -2);
+  s->set_brightness(s, -4);
+  
 }
 
 void loop() {
@@ -95,6 +96,8 @@ void loop() {
       Serial.println("Kameraaufnahme fehlgeschlagen");
       return;
     }
+    
+    delay(50000);
 
     // HTTP-Client initialisieren
     HTTPClient http;
