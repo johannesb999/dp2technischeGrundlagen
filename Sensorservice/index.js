@@ -14,6 +14,8 @@ const Measurement = require("./Models/Measurement");
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
+const cors = require("cors");
+app.use(cors());
 const rawBodyParser = bodyParser.raw({ type: "image/jpeg", limit: "10mb" });
 const images = [];
 
@@ -45,6 +47,7 @@ app.get("/api/getpicture", (req, res) => {
   // response as imaga/jpeg
   res.set("Content-Type", "image/jpeg");
   res.send(images[images.length - 1]);
+  console.log("Bild wird angefragt");
 });
 
 app.get("/api/measurements", async (req, res) => {
@@ -68,6 +71,7 @@ async function main(image) {
   // convert from uint8 Array butter to base64
   if (!image) return;
   const base64_image = Buffer.from(image).toString("base64");
+  // updateImage(`data:image/jpeg;base64,${base64Image}`);
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
@@ -91,6 +95,7 @@ async function main(image) {
     max_tokens: 300,
   });
   console.log(response.choices[0]);
+  if (!image) return;
 }
 
 // Funktion zum Lesen der Umgebungsvariablen aus .env
