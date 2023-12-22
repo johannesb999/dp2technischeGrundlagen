@@ -3,9 +3,12 @@ const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const cors = require("cors");
 const { mongo } = require("mongoose");
+const bcrypt = require("bcryptjs");
 const app = express();
 app.use(express.json());
 app.use(cors());
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "Johannes-ist-der-Beste";
 
 const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URI}`;
 const mongoClient = new MongoClient(uri, {
@@ -130,7 +133,8 @@ app.post("/register", async (req, res) => {
     console.log(`Benutzer mit der Email ${userData.email} existiert bereits`);
     return res.status(400).send("Benutzer existiert bereits");
   }
-
+  const hashedPassword = await bcrypt.hash(userData.password, 10);
+  userData.password = hashedPassword;
   await users.insertOne(userData);
   res.status(201).send("Benutzer erfolgreich registriert");
   console.log(`Benutzer ${userData.email} wurde registriert`);
@@ -139,14 +143,29 @@ app.post("/register", async (req, res) => {
 // Endpunkt für Login
 app.post("/login", async (req, res) => {
   const users = await connectToDatabase();
-  const { username, password } = req.body;
+  // console.log(users);
+  const userData = {
+    email: req.body.email,
+    password: req.body.password,
+  };
+  // const { email, password } = req.body;
+  // console.log(email,password);
 
-  const user = await users.findOne({ username });
-  if (!user || user.password !== password) {
-    return res.status(401).send("Ungültige Anmeldedaten");
+  const user = await users.findOne({ email: userData.email });
+
+  const passworIsValid = await bcrypt.compare(userData.password, user.password);
+
+  if (!passworIsValid) {
+    return res.status(401).send("Passwort ist falsch");
   }
 
-  res.status(200).send("Erfolgreich angemeldet");
+  const token = jwt.sign({ email: user.email }, JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  // console.log(token);
+
+  res.status(200).json({ token });
 });
 
 // Endpunkt für Logout

@@ -18,7 +18,7 @@
 
 <main>
   <nav>
-    <a class="link" href="#/Login">LOGIN</a>
+    <a class="link" href="#/Login">login</a>
     <a class="link" href="#/Register">Register</a>
     <a class="link" href="#/Home">Home</a>
   </nav>
