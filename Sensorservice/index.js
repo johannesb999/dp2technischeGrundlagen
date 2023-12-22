@@ -3,7 +3,7 @@ const mqtt = require("mqtt");
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
-const openai = new OpenAI();
+const openai = new OpenAI({apiKey: `${process.env.OpenAIKey}`});
 const clientId = `mqtt_${uuidv4()}`;
 
 // MongoDB models
