@@ -4,9 +4,13 @@
   import axios from "axios";
   //   --------------Daten Importe und Variablen--------------
   import * as echarts from "echarts";
-  let queryUserID = "";
   let chartInstances = {};
   let activeTab = "Daten";
+
+  const url = new URL(window.location.href);
+  const params = new URLSearchParams(url.hash.split('?')[1]);
+  const deviceId = params.get('deviceId');
+  console.log(deviceId);
   //   --------------Gesundheit Importe und Variablen--------------
 
   //   --------------Gallerie Importe und Variablen--------------
@@ -24,13 +28,14 @@
     chartInstances["Temperature"] = echarts.init(
       document.getElementById("temperature-chart")
     );
-    fetchLatestImage(); // Dies ruft das neueste Bild beim Laden der Komponente ab
+    // fetchLatestImage(); // Dies ruft das neueste Bild beim Laden der Komponente ab
   });
 
   async function fetchDeviceData() {
     try {
+      console.log("fetching data");
       const response = await axios.post("http://localhost:3001/device-data", {
-        queryUserID,
+        deviceId,
       });
       if (response.data) {
         Object.keys(response.data).forEach((key) => {
@@ -105,23 +110,27 @@
   //   -----------------Ende Gesundheit logik-----------------
 
   //   -----------------Gallerie logik----------------------
-  function updateImage(data) {
-    base64Image = data;
-    console.log(base64Image);
-  }
+  // function updateImage(data) {
+  //   base64Image = data;
+  //   console.log(base64Image);
+  // }
 
-  async function fetchLatestImage() {
-    try {
-      const response = await axios.get("http://localhost:3000/api/getpicture");
+  // async function fetchLatestImage() {
+  //   try {
+  //     const response = await axios.get("http://localhost:3000/api/getpicture");
 
-      updateImage(response.data); // Verwenden der updateImage Funktion
-      console.log(base64Image);
-    } catch (error) {
-      console.error("Fehler beim Abrufen des Bildes:", error);
-    }
-  }
+  //     updateImage(response.data); // Verwenden der updateImage Funktion
+  //     console.log(base64Image);
+  //   } catch (error) {
+  //     console.error("Fehler beim Abrufen des Bildes:", error);
+  //   }
+  // }
 
   //   -----------------Ende Gallerie logik----------------
+  function run() {
+    fetchDeviceData();
+  }
+  run();
 </script>
 
 <!-- Tabs für die Navigation -->
@@ -149,14 +158,6 @@
 <!-- Inhalt der Tabs -->
 <!-- Inhalt für DatenTab -->
 {#if activeTab === "Daten"}
-  <div>
-    <input
-      type="text"
-      bind:value={queryUserID}
-      placeholder="User ID für Gerätedaten"
-    />
-    <button on:click={fetchDeviceData}>Gerätedaten abrufen</button>
-  </div>
 
   <div id="humidity-chart" style="width: 600px; height: 400px;"></div>
   <div id="ldr-chart" style="width: 600px; height: 400px;"></div>

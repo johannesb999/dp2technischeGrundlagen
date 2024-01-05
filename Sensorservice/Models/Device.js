@@ -17,6 +17,10 @@ const deviceSchema = new mongoose.Schema(
       default: Date.now,
     },
     Location: String,
+    Status: {
+      type: String,
+      default: "Gesund",
+    },
     // modifiedAt: Date,
     // Room: String,
     // FirmwareVersion: String,

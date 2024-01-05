@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const { mongo } = require("mongoose");
 const bcrypt = require("bcryptjs");
@@ -9,6 +9,7 @@ app.use(express.json());
 app.use(cors());
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "Johannes-ist-der-Beste";
+const axios = require("axios");
 
 const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URI}`;
 const mongoClient = new MongoClient(uri, {
@@ -31,11 +32,13 @@ async function connectToDevices() {
 }
 // Geräteverbindung abrufen
 async function getDeviceByUserId(userId) {
+  // console.log(userId);
   await mongoClient.connect();
   return mongoClient
     .db("test")
     .collection("devices")
-    .findOne({ userID: userId });
+    .find({ userID: userId })
+    .toArray();
 }
 // Messdaten abrufen
 async function getMeasurementsByDeviceId(deviceId) {
@@ -46,7 +49,7 @@ async function getMeasurementsByDeviceId(deviceId) {
   // Aggregation-Pipeline zum Gruppieren der Messwerte nach SensorType
   return measurementsCollection
     .aggregate([
-      { $match: { DeviceID: deviceId } }, // Filtern nach DeviceID
+      { $match: { DeviceID: new ObjectId(deviceId) } }, // Filtern nach DeviceID
       {
         $group: {
           _id: "$SensorType", // Gruppieren nach SensorType
@@ -58,12 +61,47 @@ async function getMeasurementsByDeviceId(deviceId) {
 }
 
 // ---------------------------------Endpunkte---------------------------------
+app.post("/get-devices", async (req, res) => {
+  const authheader = req.headers.authorization;
+  const token = authheader && authheader.split(' ')[1];
+
+  if(token != undefined || token != null) {
+    try {
+      const validationResponse = await axios.get('http://localhost:3001/validate-token', {
+        headers: {authorization: `Bearer ${token}`}
+      })
+    if (!validationResponse.data.isValid) {
+      console.warn('Token is ungültig');
+      return res.status(403).send({ error: 'Token ist ungültig' });
+    }
+    const userDevices = await getDeviceByUserId(validationResponse.data.user.userID);
+    console.log(userDevices);
+    res.status(200).json(userDevices);
+    } catch {
+      res.status(500).send('Fehler bei dem Vorgang')
+    }
+  }
+})
+
+
 app.post("/connect-device", async (req, res) => {
   const devices = await connectToDevices();
   console.log("Mit Datenbank verbunden");
 
-  const userID = req.body.userID;
+  const authheader = req.headers.authorization;
+  const token = authheader && authheader.split(' ')[1];
   const uniqueDeviceID = req.body.uniqueDeviceID;
+
+  const validationResponse = await axios.get('http://localhost:3001/validate-token', {
+    headers: {authorization: `Bearer ${token}`}
+  });
+
+  if (!validationResponse.data.isValid) {
+    console.log('Token ist ungültig');
+    return res.status(403).send({ error: 'Token ist ungültig' });
+  }
+
+  const userID = validationResponse.data.user.userID;
 
   console.log(
     `Empfangene Daten: userID=${userID}, uniqueDeviceID=${typeof uniqueDeviceID}`
@@ -88,32 +126,60 @@ app.post("/connect-device", async (req, res) => {
 });
 
 app.post("/device-data", async (req, res) => {
-  const userId = req.body.queryUserID;
-  // console.log(userId);
-  const devices = await getDeviceByUserId(userId);
-  if (!devices) {
-    return res.status(404).send("Gerät nicht gefunden.");
+
+  const deviceID = req.body.deviceId;
+
+  const authheader = req.headers.authorization;
+  const token = authheader && authheader.split(' ')[1];
+
+  
+  try {
+    const validationResponse = await axios.get('http://localhost:3001/validate-token', {
+      headers: {authorization: `Bearer ${token}`}
+    });
+    console.log('Token-Validierung erfolgreich');
+    // console.log(validationResponse.data.user.userID)
+    if (!validationResponse.data.isValid) {
+      console.log('Token ist ungültig');
+      return res.status(403).send({ error: 'Token ist ungültig' });
+    }
+
+    const measurements = await getMeasurementsByDeviceId(deviceID);
+    const groupedMeasurements = measurements.reduce((acc, current) => {
+        (acc[current._id] = acc[current._id] || []).push(...current.values);
+        return acc;
+      }, {});
+      console.log(groupedMeasurements);
+      res.status(200).json(groupedMeasurements);
+    // return res.status(200).send(validationResponse.data.user.userID);
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Daten", error);
+    // res.status(500).send('Fehler beim Abrufen der Daten
   }
-  // console.log(devices._id);
-
-  // try {
-  //   const device = await getDeviceByUserId(userId);
-
-  const measurements = await getMeasurementsByDeviceId(devices._id);
-  // console.log(typeof measurements);
-
-  //   // Gruppieren der Messwerte in der Antwort
-  const groupedMeasurements = measurements.reduce((acc, current) => {
-    (acc[current._id] = acc[current._id] || []).push(...current.values);
-    return acc;
-  }, {});
-  console.log(groupedMeasurements);
-  res.status(200).json(groupedMeasurements);
-  // } catch (error) {
-  //   console.error("Fehler beim Abrufen der Gerätedaten:", error);
-  //   res.status(500).send("Interner Serverfehler.");
-  // }
 });
+
+
+
+
+app.get('/validate-token', authenticateToken, (req, res) => {
+  // console.log("validation is in progress");
+  res.status(200).send({ isValid: true, user: req.user });
+});
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+      console.log('Kein Token vorhanden');
+      return res.status(401).send('Kein Token vorhanden');
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).send('Token ist ungültig');
+      req.user = user;
+      res.status(200).send({ isValid: true, user: req.user });
+  });
+}
+
 
 // Endpunkt für die Registrierung
 app.post("/register", async (req, res) => {
@@ -152,6 +218,7 @@ app.post("/login", async (req, res) => {
   // console.log(email,password);
 
   const user = await users.findOne({ email: userData.email });
+  console.log(user);
 
   const passworIsValid = await bcrypt.compare(userData.password, user.password);
 
@@ -159,11 +226,11 @@ app.post("/login", async (req, res) => {
     return res.status(401).send("Passwort ist falsch");
   }
 
-  const token = jwt.sign({ email: user.email }, JWT_SECRET, {
+  console.log(user._id)
+
+  const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
-
-  // console.log(token);
 
   res.status(200).json({ token });
 });
@@ -172,6 +239,24 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.status(200).send("Erfolgreich abgemeldet");
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const PORT = process.env.USERSERVICE_PORT || 3001;
 app.listen(PORT, () => {
