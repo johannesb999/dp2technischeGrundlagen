@@ -3,7 +3,7 @@
 
   let password = "";
   let email = "";
-  let loggedIn = false;
+  let loggedIn = false; 
   let token = "";
 
   async function loginUser() {

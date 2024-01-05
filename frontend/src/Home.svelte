@@ -1,5 +1,6 @@
 <script>
   import axios from "axios";
+  import Header from "./lib/Header.svelte";
   import Device from "./lib/Device.svelte";
   import {Plus} from 'lucide-svelte';
 
@@ -44,6 +45,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding:20px;
+    padding-top: 50px;
   }
   
   button {

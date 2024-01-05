@@ -45,7 +45,7 @@
           }));
           let nicedata = data.slice(0, 10);
           let reallynicedata = nicedata.reverse();
-          console.log(data);
+          // console.log(data);
           setChartData(key, reallynicedata);
         });
       }
@@ -69,7 +69,7 @@
 
     let option = {
       title: {
-        text: `${chartKey} Data`,
+        text: `${chartKey}`,
       },
       tooltip: {
         trigger: "axis",
@@ -154,16 +154,24 @@
     Gallerie
   </div>
 </div>
+<div>
+  <button on:click={()=>{window.location.href = `#/DeviceSettings?deviceId=${deviceId}`}}>Settings</button>
+</div>
 
 <!-- Inhalt der Tabs -->
 <!-- Inhalt für DatenTab -->
 {#if activeTab === "Daten"}
-
-  <div id="humidity-chart" style="width: 600px; height: 400px;"></div>
-  <div id="ldr-chart" style="width: 600px; height: 400px;"></div>
-  <div id="soilmoisture-chart" style="width: 600px; height: 400px;"></div>
-  <div id="temperature-chart" style="width: 600px; height: 400px;"></div>
-  <!-- Inhalt für Gesundheit -->
+  <div id='charts'>
+    <div class='rest'>
+      <div id="humidity-chart" class='chart'></div>
+      <div id="ldr-chart" class='chart'></div>
+    </div>
+    <div class='rest'>
+      <div id="soilmoisture-chart" class='chart'></div>
+      <div id="temperature-chart" class='chart'></div>
+    </div>
+  </div>
+    <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
   <!-- Ihr Inhalt für Gesundheit -->
   <div class="health-tab">
@@ -202,6 +210,21 @@
   {/if}{/if}
 
 <style>
+  #charts {
+    display: flex;
+    /* border: 1px solid pink; */
+    padding:10%;
+    height: 100vw;
+  }
+  .rest {
+    height: 100%;
+    width: 100%;
+  }
+  .chart {
+    width: 100%;
+    height: 60%;
+    /* border: 2px solid green; */
+  }
   .active {
     display: flex;
     flex-direction: column;

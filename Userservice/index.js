@@ -31,15 +31,28 @@ async function connectToDevices() {
   return mongoClient.db("test").collection("devices");
 }
 // Geräteverbindung abrufen
-async function getDeviceByUserId(userId) {
-  // console.log(userId);
+async function getDevice(searchParam, searchId) {
+  // console.log(searchParam); // Sollte "_id" ausgeben
   await mongoClient.connect();
-  return mongoClient
+  if (searchParam === "_id") {
+    return mongoClient
     .db("test")
     .collection("devices")
-    .find({ userID: userId })
+    .findOne({[searchParam]: new ObjectId(searchId)});
+  } else {
+    return mongoClient
+    .db("test")
+    .collection("devices")
+    .find({[searchParam]: searchId})
     .toArray();
+  }
 }
+
+async function ffgfdgfd(deviceID) {
+  await mongoClient.connect();
+  return mongoClient.db("test").collection("devices").findOne( {_id: new ObjectId(deviceID)} );
+}
+
 // Messdaten abrufen
 async function getMeasurementsByDeviceId(deviceId) {
   await mongoClient.connect();
@@ -74,14 +87,53 @@ app.post("/get-devices", async (req, res) => {
       console.warn('Token is ungültig');
       return res.status(403).send({ error: 'Token ist ungültig' });
     }
-    const userDevices = await getDeviceByUserId(validationResponse.data.user.userID);
-    console.log(userDevices);
+    const userDevices = await getDevice("userID",validationResponse.data.user.userID);
+    // console.log(userDevices);
     res.status(200).json(userDevices);
     } catch {
       res.status(500).send('Fehler bei dem Vorgang')
     }
   }
 })
+
+app.post("/device-setting", async (req, res) =>{
+
+  const deviceID = req.body.deviceId;
+  console.log("device-setting:", deviceID);
+
+  const authheader = req.headers.authorization;
+  const token = authheader && authheader.split(' ')[1];
+
+    try {
+      // console.log("settings-test1");
+      const validationResponse = await axios.get('http://localhost:3001/validate-token', {
+        headers: {authorization: `Bearer ${token}`}
+      })
+      // console.log("settings-test2");
+      if (!validationResponse.data.isValid) {
+        console.warn('Token is ungültig');
+        return res.status(403).send({ error: 'Token ist ungültig' });
+      }
+      // console.log("settings-test3");
+      const selectedDevice = await getDevice("_id", deviceID);
+      console.log("selectedDevice:", selectedDevice);
+      res.status(200).json(selectedDevice);
+    } catch{
+      res.status(500).send("Gerät nicht gefunden")
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 app.post("/connect-device", async (req, res) => {
@@ -125,6 +177,11 @@ app.post("/connect-device", async (req, res) => {
   }
 });
 
+
+
+
+
+
 app.post("/device-data", async (req, res) => {
 
   const deviceID = req.body.deviceId;
@@ -149,7 +206,7 @@ app.post("/device-data", async (req, res) => {
         (acc[current._id] = acc[current._id] || []).push(...current.values);
         return acc;
       }, {});
-      console.log(groupedMeasurements);
+      // console.log(groupedMeasurements);
       res.status(200).json(groupedMeasurements);
     // return res.status(200).send(validationResponse.data.user.userID);
   } catch (error) {
@@ -246,6 +303,44 @@ app.post("/logout", (req, res) => {
 
 
 
+app.post('/update-device', async (req, res) => {
+  const { deviceId, newDeviceName, newLocation } = req.body;
+
+  try {
+      const result = await mongoClient.db("test").collection("devices").updateOne(
+          { _id: new ObjectId(deviceId) },
+          { $set: { DeviceName: newDeviceName, location: newLocation } }
+      );
+      if (result.modifiedCount === 0) {
+          return res.status(404).send('Gerät wurde nicht gefunden oder Daten sind unverändert');
+      }
+      res.status(200).send('Gerät erfolgreich aktualisiert');
+  } catch (error) {
+      console.error("Fehler beim Aktualisieren des Geräts in der Datenbank", error);
+      res.status(500).send('Interner Serverfehler');
+  }
+});
+
+app.post('/initialize-device', async (req, res) => {
+  const { uniqueDeviceID, DeviceName, Location } = req.body;
+  console.log(uniqueDeviceID);
+  console.log("gffokfbgrwebnigfebnfgefbgfefbfsvb")
+
+  try {
+    console.log("hes treying")
+      const result = await mongoClient.db("test").collection("devices").updateOne(
+          { UniqueDeviceID: uniqueDeviceID },
+          { $set: { DeviceName: DeviceName, location: Location } }
+      );
+      if (result.modifiedCount === 0) {
+          return res.status(404).send('Gerät wurde nicht gefunden oder Daten sind unverändert');
+      }
+      res.status(200).send('Gerät erfolgreich aktualisiert');
+  } catch (error) {
+      console.error("Fehler beim Aktualisieren des Geräts in der Datenbank", error);
+      res.status(500).send('Interner Serverfehler');
+  }
+});
 
 
 

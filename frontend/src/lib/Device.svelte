@@ -1,5 +1,5 @@
 <script>
-    
+
       export let device;
     
       console.log("device:", device);
@@ -10,6 +10,11 @@
       function linkPage() {
         window.location.href = `#/Detail?deviceId=${device._id}`;
     }
+
+    function run() {
+
+    }
+    run();
     </script>
 
 
@@ -18,7 +23,7 @@
 <main  on:click={linkPage} >
     <img src='ZebraPflanze.png' alt='Pflanze'>
     <div id='wrapper'>
-        <span>Marty</span>
+        <span>{device.DeviceName}</span>
         <span>Gießen</span>
     </div>
 </main>

@@ -5,6 +5,8 @@
   import Home from "./Home.svelte";
   import Detail from "./Detail.svelte";
   import Health from "./Health.svelte";
+  import Connect from "./Connect.svelte";
+  import DeviceSettings from "./DeviceSettings.svelte";
 
   const routes = {
     "/": Register,
@@ -13,6 +15,8 @@
     "/Home": Home,
     "/Detail": Detail,
     "/Health": Health,
+    "/Connect": Connect,
+    "/DeviceSettings": DeviceSettings,
   };
 </script>
 
@@ -45,6 +49,8 @@
     bottom: 0;
     align-items: center;
     background-color: #000000;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
     padding-top: 1rem;
     padding-bottom: 1rem;
   }
@@ -52,6 +58,9 @@
     color: #ffffff;
   }
   h1 {
+    margin:0;
+    padding: 10px;
+    background-color: #000000;
     text-align: center;
   }
 </style>
