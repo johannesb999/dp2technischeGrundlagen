@@ -91,6 +91,7 @@
       flex-direction: column;
       align-items: center;
       padding: 15px;
+      padding-top: 100px;
     }
 
     input {

@@ -2,35 +2,56 @@
   import Register from "./Register.svelte";
   import Login from "./Login.svelte";
   import Router from "svelte-spa-router";
-  import Home from "./Home.svelte";
+  import Homee from "./Home.svelte";
   import Detail from "./Detail.svelte";
   import Health from "./Health.svelte";
   import Connect from "./Connect.svelte";
   import DeviceSettings from "./DeviceSettings.svelte";
 
+  import { User, Home, ChevronLeft } from 'lucide-svelte'
+
   const routes = {
     "/": Register,
     "/Login": Login,
     "/Register": Register,
-    "/Home": Home,
+    "/Home": Homee,
     "/Detail": Detail,
     "/Health": Health,
     "/Connect": Connect,
     "/DeviceSettings": DeviceSettings,
   };
+  function goback() {
+    window.history.back();
+  }
+
+
 </script>
 
 <main>
-  <h1>PlantMonit</h1>
+  <div id='header'>
+    <button on:click={goback} style="background-color: transparent; margin:0; padding:0;">
+      <ChevronLeft size={50}></ChevronLeft>  
+    </button>
+    <h1>PlantMonit</h1>
+  </div>
   <Router {routes}></Router>
   <nav>
-    <a class="link" href="#/Login">login</a>
-    <a class="link" href="#/Register">Register</a>
-    <a class="link" href="#/Home">Home</a>
+    <a class="link" href="#/Login"><User></User></a>
+    <!-- <a class="link" href="#/Register">Register</a> -->
+    <a class="link" href="#/Home"><Home></Home></a>
   </nav>
 </main>
 
 <style>
+  #header {
+    display: flex;
+    position: fixed;
+    z-index: 100;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: black;
+  }
   main {
     padding: 0;
     margin: 0;
@@ -42,6 +63,7 @@
   }
   nav {
     width: 100%;
+    height: 2rem;
     display: flex;
     justify-content: space-around;
     position: fixed;
@@ -59,6 +81,8 @@
   }
   h1 {
     margin:0;
+    margin-right: auto;
+    margin-left: auto;
     padding: 10px;
     background-color: #000000;
     text-align: center;

@@ -93,6 +93,7 @@
 <style>
     main {
         width: 96vw;
+            padding-top: 100px;
         /* border: 2px solid pink; */
     }
     form {

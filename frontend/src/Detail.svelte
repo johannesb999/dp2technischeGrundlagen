@@ -2,6 +2,7 @@
   //   --------------Seitenweite Importe und Variablen--------------
   import { onMount } from "svelte";
   import axios from "axios";
+  import {Settings} from 'lucide-svelte';
   //   --------------Daten Importe und Variablen--------------
   import * as echarts from "echarts";
   let chartInstances = {};
@@ -83,10 +84,31 @@
       xAxis: {
         type: "category",
         boundaryGap: false,
-        data: data.map((item) => item.name),
+        // data: data.map((item) => item.name),
+        axisLabel: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
+        axisLine: {
+          show: false,
+        },
       },
       yAxis: {
         type: "value",
+        axisLabel: {
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
+        axisLine: {
+          show: false,
+        },
+        splitLine: {
+          show: false, // Verstecke Grid-Linien der Y-Achse
+        }
       },
       series: [
         {
@@ -96,7 +118,12 @@
           areaStyle: { normal: { color: gradientColor } },
           emphasis: {
             focus: "series",
+          },  
+          smooth: true,
+          lineStyle: {
+            width: 2
           },
+          showSymbol: false,
         },
       ],
     };
@@ -154,12 +181,13 @@
     Gallerie
   </div>
 </div>
-<div>
-  <button on:click={()=>{window.location.href = `#/DeviceSettings?deviceId=${deviceId}`}}>Settings</button>
-</div>
+
 
 <!-- Inhalt der Tabs -->
 <!-- Inhalt für DatenTab -->
+<button id='settingsbtn' on:click={()=>{window.location.href = `#/DeviceSettings?deviceId=${deviceId}`}}>
+  <Settings></Settings>
+</button>
 {#if activeTab === "Daten"}
   <div id='charts'>
     <div class='rest'>
@@ -210,6 +238,13 @@
   {/if}{/if}
 
 <style>
+  #settingsbtn {
+    position: absolute;
+    z-index: 200;
+    right: 2%;
+    top: 1.5%;
+    background-color: transparent;
+  }
   #charts {
     display: flex;
     /* border: 1px solid pink; */
@@ -225,6 +260,7 @@
     height: 60%;
     /* border: 2px solid green; */
   }
+
   .active {
     display: flex;
     flex-direction: column;
@@ -232,16 +268,33 @@
     justify-content: center;
   }
   .tabs {
-    display: flex;
-    justify-content: space-between;
+    width:70%;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 50px;
+    /* margin: px; */
+    margin-top: 100px;
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    /* display: flex;
+    justify-content: space-around; */
     padding: 1px;
-    background: #000000;
+    background: #161616;
+    border-radius: 100px;
+    overflow: hidden;
   }
   .tab {
+    /* border: 2px solid red; */
     padding: 10px;
     cursor: pointer;
+    display: flex;
+    justify-content: center;
+    /* margin-left: auto;
+    margin-right: auto; */
   }
   .active {
     background: #9a9a9a;
-  }
+    color: black;
+    /* text-decoration: underline; */
+  } 
 </style>

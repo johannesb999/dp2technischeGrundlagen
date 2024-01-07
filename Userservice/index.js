@@ -48,9 +48,10 @@ async function getDevice(searchParam, searchId) {
   }
 }
 
-async function ffgfdgfd(deviceID) {
+async function getUserData(userID) {
   await mongoClient.connect();
-  return mongoClient.db("test").collection("devices").findOne( {_id: new ObjectId(deviceID)} );
+  console.log(userID);
+  return mongoClient.db("test").collection("users").findOne( new ObjectId(userID));
 }
 
 // Messdaten abrufen
@@ -77,8 +78,7 @@ async function getMeasurementsByDeviceId(deviceId) {
 app.post("/get-devices", async (req, res) => {
   const authheader = req.headers.authorization;
   const token = authheader && authheader.split(' ')[1];
-
-  if(token != undefined || token != null) {
+  // if(token != undefined || token != null) {
     try {
       const validationResponse = await axios.get('http://localhost:3001/validate-token', {
         headers: {authorization: `Bearer ${token}`}
@@ -93,7 +93,7 @@ app.post("/get-devices", async (req, res) => {
     } catch {
       res.status(500).send('Fehler bei dem Vorgang')
     }
-  }
+  // }
 })
 
 app.post("/device-setting", async (req, res) =>{
@@ -216,7 +216,26 @@ app.post("/device-data", async (req, res) => {
 });
 
 
-
+app.post('/get-token', async (req,res) => {
+  const authheader = req.headers.authorization;
+  const token = authheader && authheader.split(' ')[1];
+  let bool = false;
+  try {
+    const validationResponse = await axios.get('http://localhost:3001/validate-token', {
+      headers: {authorization: `Bearer ${token}`}
+    })
+    if (!validationResponse.data.isValid) {
+      console.error("Token ist ungültig");
+      return res.status(403).send({ error: "Token ist ungültig" });
+    }
+    const userData = await getUserData(validationResponse.data.user.userID);
+    console.log("UserData:",userData);
+    bool = true;
+    res.status(200).json({ bool: bool, data: userData});
+  } catch{
+    res.status(500).send("Kein Token vorhanden");
+  }
+})
 
 app.get('/validate-token', authenticateToken, (req, res) => {
   // console.log("validation is in progress");
@@ -225,6 +244,7 @@ app.get('/validate-token', authenticateToken, (req, res) => {
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
+  console.log("tokem:", token);
   if (!token) {
       console.log('Kein Token vorhanden');
       return res.status(401).send('Kein Token vorhanden');
@@ -276,6 +296,8 @@ app.post("/login", async (req, res) => {
 
   const user = await users.findOne({ email: userData.email });
   console.log(user);
+  const username = user.username;
+  console.log(username);
 
   const passworIsValid = await bcrypt.compare(userData.password, user.password);
 
@@ -289,7 +311,7 @@ app.post("/login", async (req, res) => {
     expiresIn: "1h",
   });
 
-  res.status(200).json({ token });
+  res.status(200).json({ token, username });
 });
 
 // Endpunkt für Logout
@@ -321,10 +343,32 @@ app.post('/update-device', async (req, res) => {
   }
 });
 
+app.post('/update-user', async (req, res) => {
+  const searchemail = req.body.emailChache;
+  const email = req.body.email;
+  const username = req.body.username;
+  console.log(searchemail);
+
+  try {
+      const result = await mongoClient.db("test").collection("users").updateOne(
+          { email: searchemail },
+          { $set: { username: username, email: email } }
+      );
+      if (result.modifiedCount === 0) {
+          return res.status(404).send('Gerät wurde nicht gefunden oder Daten sind unverändert');
+      }
+      res.status(200).send('Gerät erfolgreich aktualisiert');
+  } catch (error) {
+      console.error("Fehler beim Aktualisieren des Geräts in der Datenbank", error);
+      res.status(500).send('Interner Serverfehler');
+  }
+});
+
+
+
+
 app.post('/initialize-device', async (req, res) => {
   const { uniqueDeviceID, DeviceName, Location } = req.body;
-  console.log(uniqueDeviceID);
-  console.log("gffokfbgrwebnigfebnfgefbgfefbfsvb")
 
   try {
     console.log("hes treying")
