@@ -74,86 +74,56 @@ async function getMeasurementsByDeviceId(deviceId) {
     .toArray(); // Konvertieren des Cursors in ein Array
 }
 
-// ---------------------------------Endpunkte---------------------------------
-app.post("/get-devices", async (req, res) => {
-  const authheader = req.headers.authorization;
-  const token = authheader && authheader.split(' ')[1];
-  // if(token != undefined || token != null) {
-    try {
-      const validationResponse = await axios.get('http://localhost:3001/validate-token', {
-        headers: {authorization: `Bearer ${token}`}
-      })
-    if (!validationResponse.data.isValid) {
-      console.warn('Token is ungültig');
-      return res.status(403).send({ error: 'Token ist ungültig' });
-    }
-    const userDevices = await getDevice("userID",validationResponse.data.user.userID);
-    // console.log(userDevices);
-    res.status(200).json(userDevices);
-    } catch {
-      res.status(500).send('Fehler bei dem Vorgang')
-    }
-  // }
-})
+function validateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
 
-app.post("/device-setting", async (req, res) =>{
+  if (!token) {
+    return res.status(401).send('Kein Token vorhanden');
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).send('Token ist ungültig');
+    }
+    req.user = user; // Fügen Sie die Benutzerinformationen zur Anfrage hinzu
+    next(); // Fahren Sie mit der nächsten Middleware oder Route fort
+  });
+}
+// ---------------------------------Endpunkte---------------------------------
+
+
+app.post("/get-devices", validateToken, async (req, res) => {
+  const userDevices = await getDevice("userID", req.user.userID);
+  res.status(200).json(userDevices);
+});
+
+app.post("/device-setting", validateToken, async (req, res) =>{
 
   const deviceID = req.body.deviceId;
   console.log("device-setting:", deviceID);
 
-  const authheader = req.headers.authorization;
-  const token = authheader && authheader.split(' ')[1];
-
     try {
-      // console.log("settings-test1");
-      const validationResponse = await axios.get('http://localhost:3001/validate-token', {
-        headers: {authorization: `Bearer ${token}`}
-      })
-      // console.log("settings-test2");
-      if (!validationResponse.data.isValid) {
-        console.warn('Token is ungültig');
-        return res.status(403).send({ error: 'Token ist ungültig' });
-      }
-      // console.log("settings-test3");
       const selectedDevice = await getDevice("_id", deviceID);
       console.log("selectedDevice:", selectedDevice);
       res.status(200).json(selectedDevice);
     } catch{
       res.status(500).send("Gerät nicht gefunden")
     }
-})
+});
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-app.post("/connect-device", async (req, res) => {
+app.post("/connect-device", validateToken, async (req, res) => {
   const devices = await connectToDevices();
   console.log("Mit Datenbank verbunden");
 
-  const authheader = req.headers.authorization;
-  const token = authheader && authheader.split(' ')[1];
   const uniqueDeviceID = req.body.uniqueDeviceID;
 
-  const validationResponse = await axios.get('http://localhost:3001/validate-token', {
-    headers: {authorization: `Bearer ${token}`}
-  });
-
-  if (!validationResponse.data.isValid) {
-    console.log('Token ist ungültig');
-    return res.status(403).send({ error: 'Token ist ungültig' });
-  }
-
-  const userID = validationResponse.data.user.userID;
+  const userID = req.user.userID;
 
   console.log(
     `Empfangene Daten: userID=${userID}, uniqueDeviceID=${typeof uniqueDeviceID}`
@@ -178,29 +148,11 @@ app.post("/connect-device", async (req, res) => {
 });
 
 
-
-
-
-
-app.post("/device-data", async (req, res) => {
+app.post("/device-data", validateToken, async (req, res) => {
 
   const deviceID = req.body.deviceId;
-
-  const authheader = req.headers.authorization;
-  const token = authheader && authheader.split(' ')[1];
-
   
   try {
-    const validationResponse = await axios.get('http://localhost:3001/validate-token', {
-      headers: {authorization: `Bearer ${token}`}
-    });
-    console.log('Token-Validierung erfolgreich');
-    // console.log(validationResponse.data.user.userID)
-    if (!validationResponse.data.isValid) {
-      console.log('Token ist ungültig');
-      return res.status(403).send({ error: 'Token ist ungültig' });
-    }
-
     const measurements = await getMeasurementsByDeviceId(deviceID);
     const groupedMeasurements = measurements.reduce((acc, current) => {
         (acc[current._id] = acc[current._id] || []).push(...current.values);
@@ -216,19 +168,10 @@ app.post("/device-data", async (req, res) => {
 });
 
 
-app.post('/get-token', async (req,res) => {
-  const authheader = req.headers.authorization;
-  const token = authheader && authheader.split(' ')[1];
+app.post('/get-token', validateToken, async (req,res) => {
   let bool = false;
   try {
-    const validationResponse = await axios.get('http://localhost:3001/validate-token', {
-      headers: {authorization: `Bearer ${token}`}
-    })
-    if (!validationResponse.data.isValid) {
-      console.error("Token ist ungültig");
-      return res.status(403).send({ error: "Token ist ungültig" });
-    }
-    const userData = await getUserData(validationResponse.data.user.userID);
+    const userData = await getUserData(req.user.userID);
     console.log("UserData:",userData);
     bool = true;
     res.status(200).json({ bool: bool, data: userData});
@@ -236,26 +179,6 @@ app.post('/get-token', async (req,res) => {
     res.status(500).send("Kein Token vorhanden");
   }
 })
-
-app.get('/validate-token', authenticateToken, (req, res) => {
-  // console.log("validation is in progress");
-  res.status(200).send({ isValid: true, user: req.user });
-});
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  console.log("tokem:", token);
-  if (!token) {
-      console.log('Kein Token vorhanden');
-      return res.status(401).send('Kein Token vorhanden');
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (err) return res.status(403).send('Token ist ungültig');
-      req.user = user;
-      res.status(200).send({ isValid: true, user: req.user });
-  });
-}
 
 
 // Endpunkt für die Registrierung
@@ -291,8 +214,6 @@ app.post("/login", async (req, res) => {
     email: req.body.email,
     password: req.body.password,
   };
-  // const { email, password } = req.body;
-  // console.log(email,password);
 
   const user = await users.findOne({ email: userData.email });
   console.log(user);
@@ -325,7 +246,7 @@ app.post("/logout", (req, res) => {
 
 
 
-app.post('/update-device', async (req, res) => {
+app.post('/update-device',validateToken, async (req, res) => {
   const { deviceId, newDeviceName, newLocation } = req.body;
 
   try {
@@ -343,7 +264,7 @@ app.post('/update-device', async (req, res) => {
   }
 });
 
-app.post('/update-user', async (req, res) => {
+app.post('/update-user', validateToken, async (req, res) => {
   const searchemail = req.body.emailChache;
   const email = req.body.email;
   const username = req.body.username;
@@ -367,7 +288,7 @@ app.post('/update-user', async (req, res) => {
 
 
 
-app.post('/initialize-device', async (req, res) => {
+app.post('/initialize-device',validateToken, async (req, res) => {
   const { uniqueDeviceID, DeviceName, Location } = req.body;
 
   try {
