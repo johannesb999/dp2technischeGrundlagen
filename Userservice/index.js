@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
-const { mongo } = require("mongoose");
 const bcrypt = require("bcryptjs");
 const app = express();
 app.use(express.json());
@@ -32,7 +31,6 @@ async function connectToDevices() {
 }
 // Geräteverbindung abrufen
 async function getDevice(searchParam, searchId) {
-  // console.log(searchParam); // Sollte "_id" ausgeben
   await mongoClient.connect();
   if (searchParam === "_id") {
     return mongoClient
@@ -77,6 +75,7 @@ async function getMeasurementsByDeviceId(deviceId) {
 function validateToken(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
+  console.log(token);
 
   if (!token) {
     return res.status(401).send('Kein Token vorhanden');
@@ -86,20 +85,23 @@ function validateToken(req, res, next) {
     if (err) {
       return res.status(403).send('Token ist ungültig');
     }
-    req.user = user; // Fügen Sie die Benutzerinformationen zur Anfrage hinzu
-    next(); // Fahren Sie mit der nächsten Middleware oder Route fort
+    console.log("User in validation:", user);
+    req.user = user;
+    next();
   });
 }
 // ---------------------------------Endpunkte---------------------------------
 
-
+//----Endpunkt um die Geräte des Nutzers auf dem Homescreen anzuzeigen----
 app.post("/get-devices", validateToken, async (req, res) => {
   const userDevices = await getDevice("userID", req.user.userID);
+  console.log(userDevices);
+  console.log(req.user.userID);
   res.status(200).json(userDevices);
 });
 
+//----Endpunkt um Gerät für die Einstellungen zu finden----
 app.post("/device-setting", validateToken, async (req, res) =>{
-
   const deviceID = req.body.deviceId;
   console.log("device-setting:", deviceID);
 
@@ -116,7 +118,7 @@ app.post("/device-setting", validateToken, async (req, res) =>{
 
 
 
-
+//----Endpunkt zum Verbinden des Geräts mit dem Nutzerkonto----
 app.post("/connect-device", validateToken, async (req, res) => {
   const devices = await connectToDevices();
   console.log("Mit Datenbank verbunden");
@@ -147,7 +149,7 @@ app.post("/connect-device", validateToken, async (req, res) => {
   }
 });
 
-
+//----Endpunkt um die Gerätespezifischen Daten zu fetchen----
 app.post("/device-data", validateToken, async (req, res) => {
 
   const deviceID = req.body.deviceId;
@@ -158,16 +160,14 @@ app.post("/device-data", validateToken, async (req, res) => {
         (acc[current._id] = acc[current._id] || []).push(...current.values);
         return acc;
       }, {});
-      // console.log(groupedMeasurements);
       res.status(200).json(groupedMeasurements);
-    // return res.status(200).send(validationResponse.data.user.userID);
   } catch (error) {
     console.error("Fehler beim Abrufen der Daten", error);
-    // res.status(500).send('Fehler beim Abrufen der Daten
+    res.status(500).send('Fehler beim Abrufen der Daten');
   }
 });
 
-
+//----Endpunkt zum überprüfen ob der Nutzer schon eingelogt ist----
 app.post('/get-token', validateToken, async (req,res) => {
   let bool = false;
   try {
@@ -181,7 +181,7 @@ app.post('/get-token', validateToken, async (req,res) => {
 })
 
 
-// Endpunkt für die Registrierung
+//----Endpunkt für die Registrierung----
 app.post("/register", async (req, res) => {
   const users = await connectToDatabase();
 
@@ -206,7 +206,7 @@ app.post("/register", async (req, res) => {
   console.log(`Benutzer ${userData.email} wurde registriert`);
 });
 
-// Endpunkt für Login
+//----Endpunkt für Login----
 app.post("/login", async (req, res) => {
   const users = await connectToDatabase();
   // console.log(users);
@@ -235,8 +235,9 @@ app.post("/login", async (req, res) => {
   res.status(200).json({ token, username });
 });
 
-// Endpunkt für Logout
-app.post("/logout", (req, res) => {
+//----Endpunkt für Logout----
+app.post("/logout", validateToken, (req, res) => {
+  console.log("Logout:", req.user.userID);
   res.status(200).send("Erfolgreich abgemeldet");
 });
 
@@ -245,7 +246,7 @@ app.post("/logout", (req, res) => {
 
 
 
-
+//----Endpunkt zum updaten der Geräte-Einstellungen----
 app.post('/update-device',validateToken, async (req, res) => {
   const { deviceId, newDeviceName, newLocation } = req.body;
 
@@ -264,6 +265,7 @@ app.post('/update-device',validateToken, async (req, res) => {
   }
 });
 
+//----Endpunkt zum updaten des Nutzerprofils----
 app.post('/update-user', validateToken, async (req, res) => {
   const searchemail = req.body.emailChache;
   const email = req.body.email;
@@ -287,7 +289,7 @@ app.post('/update-user', validateToken, async (req, res) => {
 
 
 
-
+//----Endpunkt zum initialisieren der Geräts----
 app.post('/initialize-device',validateToken, async (req, res) => {
   const { uniqueDeviceID, DeviceName, Location } = req.body;
 

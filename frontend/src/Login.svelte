@@ -36,6 +36,7 @@
       token = response.data.token;
       username = response.data.username;
       console.log(username);
+      setAxiosAuthToken(token);
       loggedIn = true;
     } catch (error) {
       console.error("Fehler beim Login:", error);
@@ -45,6 +46,7 @@
   // Logout-Funktion
   async function logoutUser() {
     token = "";
+    setAxiosAuthToken(token);
     username = "";
     email = "";
     loggedIn = false;
@@ -57,11 +59,25 @@
   }
 
   // axios interceptor for JWT
+  // axios.interceptors.request.use(
+  //   (config) => {
+  //     console.log("interceptorToken:", token);
+  //     if (token) {
+  //       config.headers.authorization = `Bearer ${token}`;
+  //     }
+  //     return config;
+  //   },
+  //   (error) => {
+  //     return Promise.reject(error);
+  //   }
+  // );
+  function setAxiosAuthToken(token) {
   axios.interceptors.request.use(
     (config) => {
-      console.log("interceptorToken:", token);
       if (token) {
         config.headers.authorization = `Bearer ${token}`;
+      } else {
+        delete config.headers.authorization;
       }
       return config;
     },
@@ -69,6 +85,12 @@
       return Promise.reject(error);
     }
   );
+}
+
+
+
+
+
 
   async function checkToken() {
     try {

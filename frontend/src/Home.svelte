@@ -70,7 +70,7 @@
 </main>
 
   {:else if activeTab === "Innen"}
-<main>
+<main class='kjhgfd'>
   {#each innerdevices as device}
     <Device {device}/> 
   {/each}
@@ -81,7 +81,7 @@
 </main>
 
   {:else if activeTab === "Außen"}
-  <main>
+  <main class='kjhgfd'>
     {#each autherdevices as device}
       <Device {device}/> 
     {/each}
