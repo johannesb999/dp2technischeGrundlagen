@@ -1,10 +1,10 @@
 <script>
   import axios from "axios";
-  import { UserPlus, Pencil } from 'lucide-svelte'
+  import { UserPlus, Pencil } from "lucide-svelte";
 
   let password = "";
   let email = "";
-  let loggedIn = false; 
+  let loggedIn = false;
   let token = "";
   let username = "";
   let isUsernameDisabled = true;
@@ -36,7 +36,7 @@
       token = response.data.token;
       username = response.data.username;
       console.log(username);
-      setAxiosAuthToken(token);
+      // setAxiosAuthToken(token);
       loggedIn = true;
     } catch (error) {
       console.error("Fehler beim Login:", error);
@@ -45,39 +45,30 @@
 
   // Logout-Funktion
   async function logoutUser() {
+    
+    console.log("logging out...");
+    console.log(loggedIn, token);
     token = "";
-    setAxiosAuthToken(token);
+    // setAxiosAuthToken(token);
     username = "";
     email = "";
     loggedIn = false;
+
     // Hier sollten Sie auch den lokalen Speicher oder Session-Speicher bereinigen, falls Sie den Token dort gespeichert haben
-    localStorage.removeItem('token'); // Beispiel, wenn Sie localStorage verwenden
-    const response = await axios.post("http://localhost:3001/logout");
-    console.log(response);
+    //  localStorage.removeItem('token'); // Beispiel, wenn Sie localStorage verwenden
+    // const response = await axios.post("http://localhost:3001/logout");
+
+    //  console.log(response);
     // Weiterleitung zur Login-Seite oder einer anderen Seite
-    window.location.href = "#/Login";
+    // window.location.href = "#/Login";
   }
 
   // axios interceptor for JWT
-  // axios.interceptors.request.use(
-  //   (config) => {
-  //     console.log("interceptorToken:", token);
-  //     if (token) {
-  //       config.headers.authorization = `Bearer ${token}`;
-  //     }
-  //     return config;
-  //   },
-  //   (error) => {
-  //     return Promise.reject(error);
-  //   }
-  // );
-  function setAxiosAuthToken(token) {
   axios.interceptors.request.use(
     (config) => {
+      console.log("interceptorToken:", token);
       if (token) {
         config.headers.authorization = `Bearer ${token}`;
-      } else {
-        delete config.headers.authorization;
       }
       return config;
     },
@@ -85,12 +76,21 @@
       return Promise.reject(error);
     }
   );
-}
-
-
-
-
-
+  // function setAxiosAuthToken(token) {
+  //   axios.interceptors.request.use(
+  //     (config) => {
+  //       if (token) {
+  //         config.headers.authorization = `Bearer ${token}`;
+  //       } else {
+  //         delete config.headers.authorization;
+  //       }
+  //       return config;
+  //     },
+  //     (error) => {
+  //       return Promise.reject(error);
+  //     }
+  //   );
+  // }
 
   async function checkToken() {
     try {
@@ -98,16 +98,15 @@
       console.log(response);
       username = response.data.data.username;
       userCache = username;
-      email = response.data.data.email
+      email = response.data.data.email;
       emailChache = email;
       loggedIn = response.data.bool;
-      console.log(username);  
-    } catch(error) {
+      console.log(username);
+    } catch (error) {
       console.error("Kein Token vorhanden oder ungültig", error);
       loggedIn = false;
     }
   }
-
 
   // function enable(editParam) {
   //   console.log(editParam);
@@ -130,16 +129,16 @@
   function editUser() {
     // console.log(username);
     // console.log(userCache);
-    if(!isEmailDisabled){
+    if (!isEmailDisabled) {
       if (email === emailChache || email === null) {
-        email = emailChache
+        email = emailChache;
       } else {
-        console.log(email)
+        console.log(email);
         updateUser();
         emailChache = email;
       }
-    } else if(!isUsernameDisabled) {
-      if(username === userCache || username === null) {
+    } else if (!isUsernameDisabled) {
+      if (username === userCache || username === null) {
         // console.log("keine änderung");
         username = userCache;
       } else {
@@ -159,21 +158,21 @@
         emailChache,
         email,
         username,
-      })
-    } catch(error) {
-      console.error(error)
+      });
+    } catch (error) {
+      console.error(error);
     }
   }
 
   function linkPage() {
-    window.location.href = '#/Register'
+    window.location.href = "#/Register";
   }
 
   function run() {
     checkToken();
   }
   run();
-  </script>
+</script>
 
 {#if !loggedIn}
   <form on:submit|preventDefault={loginUser}>
@@ -189,45 +188,60 @@
 
     <button type="submit">Einloggen</button>
   </form>
-  <button id='registerbtn' on:click={linkPage}>Registrieren</button>
+  <button id="registerbtn" on:click={linkPage}>Registrieren</button>
 {:else}
   <form>
     <h1>Nutzerinformationen</h1>
-    <button id='icon'>
-      <UserPlus size='50'></UserPlus>
+    <button id="icon">
+      <UserPlus size="50"></UserPlus>
     </button>
     <div>
-      <label for='username-display'>Benutzername:</label>
-      <div class='testcontainer'>
-        <input disabled={isUsernameDisabled} id='username-display' type='text' bind:value={username}>
-        <button class='editbtn' on:click={() =>{
-          enableUsername();
-        }}>
+      <label for="username-display">Benutzername:</label>
+      <div class="testcontainer">
+        <input
+          disabled={isUsernameDisabled}
+          id="username-display"
+          type="text"
+          bind:value={username}
+        />
+        <button
+          class="editbtn"
+          on:click={() => {
+            enableUsername();
+          }}
+        >
           <Pencil></Pencil>
         </button>
       </div>
     </div>
     <div>
-      <label for='email-display'>Email:</label>
-      <div class='testcontainer'>
-        <input disabled={isEmailDisabled} id='email-display' type='email' bind:value={email}>
-        <button class='editbtn' on:click={() =>{
-          enableemail();
-        }}>
+      <label for="email-display">Email:</label>
+      <div class="testcontainer">
+        <input
+          disabled={isEmailDisabled}
+          id="email-display"
+          type="email"
+          bind:value={email}
+        />
+        <button
+          class="editbtn"
+          on:click={() => {
+            enableemail();
+          }}
+        >
           <Pencil></Pencil>
         </button>
       </div>
       {#if !isEmailDisabled || !isUsernameDisabled}
-      <button on:click={editUser}>Speichern</button>
+        <button on:click={editUser}>Speichern</button>
       {/if}
     </div>
     <button on:click={logoutUser}>Ausloggen</button>
   </form>
 {/if}
 
-
 <style>
-    form {
+  form {
     margin-top: 10rem;
     display: flex;
     flex-direction: column;
