@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import axios from "axios";
   import {Settings} from 'lucide-svelte';
+  import DeviceSettings from './DeviceSettings.svelte';
   //   --------------Daten Importe und Variablen--------------
   import * as echarts from "echarts";
   let chartInstances = {};
@@ -18,19 +19,37 @@
   let base64Image = ""; // Dies speichert den Base64-String des Bildes
 
   //   --------------Daten logik----------------------
+  // onMount(() => {
+  //   chartInstances["Humidity"] = echarts.init(
+  //     document.getElementById("humidity-chart")
+  //   );
+  //   chartInstances["LDR"] = echarts.init(document.getElementById("ldr-chart"));
+  //   chartInstances["SoilMoisture"] = echarts.init(
+  //     document.getElementById("soilmoisture-chart")
+  //   );
+  //   chartInstances["Temperature"] = echarts.init(
+  //     document.getElementById("temperature-chart")
+  //   );
+  //   // fetchLatestImage(); // Dies ruft das neueste Bild beim Laden der Komponente ab
+  // });
   onMount(() => {
-    chartInstances["Humidity"] = echarts.init(
-      document.getElementById("humidity-chart")
-    );
-    chartInstances["LDR"] = echarts.init(document.getElementById("ldr-chart"));
-    chartInstances["SoilMoisture"] = echarts.init(
-      document.getElementById("soilmoisture-chart")
-    );
-    chartInstances["Temperature"] = echarts.init(
-      document.getElementById("temperature-chart")
-    );
-    // fetchLatestImage(); // Dies ruft das neueste Bild beim Laden der Komponente ab
+    initializeCharts();
   });
+  function initializeCharts() {
+    if (!chartInstances["Humidity"]) {
+      chartInstances["Humidity"] = echarts.init(document.getElementById("humidity-chart"));
+    }
+    if (!chartInstances["LDR"]) {
+      chartInstances["LDR"] = echarts.init(document.getElementById("ldr-chart"));
+    }
+    if (!chartInstances["SoilMoisture"]) {
+      chartInstances["SoilMoisture"] = echarts.init(document.getElementById("soilmoisture-chart"));
+    }
+    if (!chartInstances["Temperature"]) {
+      chartInstances["Temperature"] = echarts.init(document.getElementById("temperature-chart"));
+    }
+    console.log(chartInstances);
+}
 
   async function fetchDeviceData() {
     try {
@@ -52,6 +71,7 @@
       }
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
+      window.location.href='./';
     }
   }
 
@@ -70,7 +90,7 @@
 
     let option = {
       title: {
-        text: `${chartKey}`,
+        text: `${chartKey} Data`,
       },
       tooltip: {
         trigger: "axis",
@@ -84,48 +104,28 @@
       xAxis: {
         type: "category",
         boundaryGap: false,
-        // data: data.map((item) => item.name),
-        axisLabel: {
-          show: false,
-        },
-        axisTick: {
-          show: false,
-        },
-        axisLine: {
-          show: false,
-        },
+        data: data.map((item) => item.name),
       },
       yAxis: {
         type: "value",
-        axisLabel: {
-          show: false,
-        },
-        axisTick: {
-          show: false,
-        },
-        axisLine: {
-          show: false,
-        },
-        splitLine: {
-          show: false, // Verstecke Grid-Linien der Y-Achse
-        }
       },
       series: [
         {
+          smooth: true, // Glättet die Linie
+          lineStyle: {
+            width: 2,
+            color: '#42A5F5' // Blaue Farbe für die Linie
+          },
           name: chartKey,
           data: data.map((item) => item.value),
           type: "line",
           areaStyle: { normal: { color: gradientColor } },
           emphasis: {
             focus: "series",
-          },  
-          smooth: true,
-          lineStyle: {
-            width: 2
           },
-          showSymbol: false,
         },
       ],
+      
     };
 
     chartInstances[chartKey].setOption(option);
@@ -164,7 +164,31 @@
 <div class="tabs">
   <div
     class={activeTab === "Daten" ? "tab active" : "tab"}
-    on:click={() => (activeTab = "Daten")}
+    on:click={() => {
+      (activeTab = "Daten")
+      // initializeCharts();
+      // if (!chartInstances["Humidity"]) {
+      chartInstances["Humidity"].resize(document.getElementById("humidity-chart"));
+    // }
+    // if (!chartInstances["LDR"]) {
+      chartInstances["LDR"].resize(document.getElementById("ldr-chart"));
+    // }
+    // if (!chartInstances["SoilMoisture"]) {
+      chartInstances["SoilMoisture"].resize(document.getElementById("soilmoisture-chart"));
+    // }
+    // if (!chartInstances["Temperature"]) {
+      chartInstances["Temperature"].resize(document.getElementById("temperature-chart"));
+    // }
+    //   setTimeout(() => {
+    //   // Rufen Sie resize für jede Chart-Instanz auf
+    //   Object.values(chartInstances).forEach(chartInstance => {
+    //     if (chartInstance) {
+    //       console.log(chartInstance);
+    //       chartInstance.resize(document.getElementById("humidity-chart"));
+    //     }
+    //   });
+    // }, 0);
+      }}
   >
     Daten
   </div>
@@ -189,16 +213,12 @@
   <Settings></Settings>
 </button>
 {#if activeTab === "Daten"}
-  <div id='charts'>
-    <div class='rest'>
-      <div id="humidity-chart" class='chart'></div>
-      <div id="ldr-chart" class='chart'></div>
-    </div>
-    <div class='rest'>
-      <div id="soilmoisture-chart" class='chart'></div>
-      <div id="temperature-chart" class='chart'></div>
-    </div>
-  </div>
+<div id='chartcontainer'>  
+  <div class='chart' id="humidity-chart"></div>
+  <div class='chart' id="ldr-chart"></div>
+  <div class='chart' id="soilmoisture-chart"></div>
+  <div class='chart' id="temperature-chart"></div>
+</div>
     <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
   <!-- Ihr Inhalt für Gesundheit -->
@@ -236,65 +256,57 @@
   {:else}
     <p>Bild wird geladen...</p>
   {/if}{/if}
+  <!-- <DeviceSettings></DeviceSettings> -->
 
 <style>
+  #chartcontainer {
+    height: auto;
+    margin-top: 50px;
+    padding-bottom: 80px;
+  }
   #settingsbtn {
-    position: absolute;
+    position: fixed;
     z-index: 200;
     right: 2%;
     top: 1.5%;
     background-color: transparent;
   }
-  #charts {
-    display: flex;
-    /* border: 1px solid pink; */
-    padding:10%;
-    height: 100vw;
-  }
-  .rest {
-    height: 100%;
-    width: 100%;
-  }
-  .chart {
-    width: 100%;
-    height: 60%;
-    /* border: 2px solid green; */
-  }
-
   .active {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    background: #9a9a9a;
   }
   .tabs {
     width:70%;
     margin-left: auto;
     margin-right: auto;
     min-height: 50px;
-    /* margin: px; */
     margin-top: 100px;
     display: grid;
     grid-template-columns: repeat(3,1fr);
-    /* display: flex;
-    justify-content: space-around; */
     padding: 1px;
     background: #161616;
     border-radius: 100px;
     overflow: hidden;
   }
   .tab {
-    /* border: 2px solid red; */
     padding: 10px;
     cursor: pointer;
     display: flex;
     justify-content: center;
-    /* margin-left: auto;
-    margin-right: auto; */
+    align-items: center;
   }
-  .active {
-    background: #9a9a9a;
-    color: black;
-    /* text-decoration: underline; */
-  } 
+.chart {
+  padding: 0;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 90vw;
+  height: 300px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+}
+
 </style>

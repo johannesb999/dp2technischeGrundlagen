@@ -11,7 +11,8 @@
 
     let newDeviceName = null;
     let newLocation = null;
-    let originalDeviceName = null;
+    let originalDeviceName = "kek";
+    let originalLocation = null;
 
     const options = [{
 		value: 'Innen',
@@ -30,24 +31,52 @@
             console.log(response);
             originalDeviceName = response.data.DeviceName;
             radioValue = response.data.location;
+            originalLocation = response.data.location;
+            console.log(originalDeviceName,originalLocation);
         } catch (error) {
             console.error("Gerät konnte nicht gefunden werden", error);
         }
     }
 
     async function updateDevice() {
-        newLocation = radioValue;
-        const updatedDevice = {newDeviceName, newLocation};
+        let updatedDevice = {};
 
-        try {
-            const response = await axios.post('http://localhost:3001/update-device', {
-                deviceId,
-                ...updatedDevice
-            });
-            console.log("Gerät aktualisiert: ", response.data);
-        } catch (error) {
-            console.error("Fehler beim Aktualisieren des Geräts", error);
-        }
+    // Prüfe, ob sich originalDeviceName von newDeviceName unterscheidet
+    if (newDeviceName && newDeviceName.trim() !== "" && originalDeviceName !== newDeviceName) {
+        console.log("Name hat sich geändert", newDeviceName);
+        updatedDevice.newDeviceName = newDeviceName;
+    } else {
+        console.log("Name hat sich nicht geändert", originalDeviceName);
+        // Verwenden Sie den originalDeviceName, wenn kein neuer Name eingegeben wurde
+        updatedDevice.newDeviceName = originalDeviceName;
+    }
+
+    // Prüfe, ob sich originalLocation von radioValue unterscheidet
+    if (originalLocation !== radioValue) {
+        console.log("standort hat sich geändert", radioValue);
+        updatedDevice.newLocation = radioValue;
+    } else {
+        console.log("standort hat sich nicht geändert", originalLocation);
+        updatedDevice.newLocation = originalLocation;
+    }
+
+    // Überprüfe, ob es Aktualisierungen gibt
+    if (Object.keys(updatedDevice).length === 0) {
+        console.log("Keine Aktualisierungen erforderlich.");
+        return;
+    }
+
+    try {
+        console.log(updatedDevice);
+        return;
+        const response = await axios.post('http://localhost:3001/update-device', {
+            deviceId,
+            ...updatedDevice
+        });
+        console.log("Gerät aktualisiert: ", response.data);
+    } catch (error) {
+        console.error("Fehler beim Aktualisieren des Geräts", error);
+    }
     }
 
 

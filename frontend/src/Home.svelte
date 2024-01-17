@@ -1,8 +1,8 @@
 <script>
   import axios from "axios";
-  import Header from "./lib/Header.svelte";
   import Device from "./lib/Device.svelte";
   import {Plus} from 'lucide-svelte';
+  import {currentRoute, loggedIn} from './svelte-store';
 
   let devices = [];
   let autherdevices = [];
@@ -21,6 +21,8 @@
     } catch (error) {
       console.error("Der Nutzer hate keine verbundenen Geräte", error);
       window.location.href = '#/Login'
+      loggedIn.update(prev => false);
+      currentRoute.set('/Login');
     }
   }
 
@@ -30,6 +32,7 @@
 
   function run() {
     getDevices();
+    currentRoute.set('/Home');
   }
   run();
 </script>
@@ -150,6 +153,7 @@
     cursor: pointer;
     display: flex;
     justify-content: center;
+    align-items: center;
     /* margin-left: auto;
     margin-right: auto; */
   }

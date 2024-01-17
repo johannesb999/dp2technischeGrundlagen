@@ -1,27 +1,33 @@
 <script>
   import axios from "axios";
   import { UserPlus, Pencil } from "lucide-svelte";
+  import {loggedIn, token} from './svelte-store';
 
+  let memberSince = null;
   let password = "";
   let email = "";
-  let loggedIn = false;
-  let token = "";
   let username = "";
+  let devicecount = 0;
   let isUsernameDisabled = true;
   let isEmailDisabled = true;
+  let userCache;
+  let emailChache;
+  let currentToken = '';
+  const unsubscribe = token.subscribe(value => {
+    currentToken = value;
+  });
+
+  run();
+
+
 
   async function loginUser() {
     userCache = username;
     emailChache = email;
-    // Überprüfen, ob alle Felder ausgefüllt sind
-
-    // Einfache E-Mail-Validierung
     if (!email.includes("@") || !email.match(/\.[a-z]+$/)) {
       alert("Bitte geben Sie eine gültige E-Mail-Adresse ein");
       return;
     }
-
-    // Überprüfen der Passwortlänge
     if (password.length < 2) {
       alert("Das Passwort muss mindestens 2 Zeichen lang sein");
       return;
@@ -33,42 +39,40 @@
         password,
       });
       console.log("Login erfolgreich:", response);
-      token = response.data.token;
+      token.set(response.data.token);
       username = response.data.username;
       console.log(username);
-      // setAxiosAuthToken(token);
-      loggedIn = true;
+      loggedIn.update(prev => true);
+      checkToken();
+      window.location.href = '#/Home'
     } catch (error) {
       console.error("Fehler beim Login:", error);
     }
+  }
+  
+  function linkPage() {
+    window.location.href = "#/Register";
   }
 
   // Logout-Funktion
   async function logoutUser() {
     
     console.log("logging out...");
-    console.log(loggedIn, token);
-    token = "";
-    // setAxiosAuthToken(token);
+    token.set("");
     username = "";
     email = "";
-    loggedIn = false;
-
-    // Hier sollten Sie auch den lokalen Speicher oder Session-Speicher bereinigen, falls Sie den Token dort gespeichert haben
-    //  localStorage.removeItem('token'); // Beispiel, wenn Sie localStorage verwenden
-    // const response = await axios.post("http://localhost:3001/logout");
-
-    //  console.log(response);
-    // Weiterleitung zur Login-Seite oder einer anderen Seite
-    // window.location.href = "#/Login";
+    loggedIn.update(prev => false);
   }
 
   // axios interceptor for JWT
   axios.interceptors.request.use(
     (config) => {
-      console.log("interceptorToken:", token);
-      if (token) {
-        config.headers.authorization = `Bearer ${token}`;
+      // console.log("interceptorToken:", currentToken);
+      if (currentToken) {
+        config.headers.authorization = `Bearer ${currentToken}`;
+      } else {
+        console.log("token gelöscht");
+        delete config.headers.authorization;
       }
       return config;
     },
@@ -76,43 +80,34 @@
       return Promise.reject(error);
     }
   );
-  // function setAxiosAuthToken(token) {
-  //   axios.interceptors.request.use(
-  //     (config) => {
-  //       if (token) {
-  //         config.headers.authorization = `Bearer ${token}`;
-  //       } else {
-  //         delete config.headers.authorization;
-  //       }
-  //       return config;
-  //     },
-  //     (error) => {
-  //       return Promise.reject(error);
-  //     }
-  //   );
-  // }
+
+
+  async function deleteUser() {
+    const response = await axios.post('http://localhost:3001/delete-user');
+  }
+
+
+  //----if logged in----
 
   async function checkToken() {
     try {
       const response = await axios.post("http://localhost:3001/get-token");
       console.log(response);
+      memberSince = response.data.data.createdAt.split(",")[0];
       username = response.data.data.username;
       userCache = username;
       email = response.data.data.email;
       emailChache = email;
-      loggedIn = response.data.bool;
       console.log(username);
+      const answer = await axios.post("http://localhost:3001/get-devices");
+      devicecount = answer.data.length;
     } catch (error) {
       console.error("Kein Token vorhanden oder ungültig", error);
-      loggedIn = false;
     }
   }
 
-  // function enable(editParam) {
-  //   console.log(editParam);
-  //   editParam = "";
-  //   isInputDisabled = false;
-  // }
+
+
   function enableUsername() {
     username = null;
     isUsernameDisabled = false;
@@ -123,12 +118,7 @@
     isEmailDisabled = false;
   }
 
-  let userCache;
-  let emailChache;
-
   function editUser() {
-    // console.log(username);
-    // console.log(userCache);
     if (!isEmailDisabled) {
       if (email === emailChache || email === null) {
         email = emailChache;
@@ -139,7 +129,6 @@
       }
     } else if (!isUsernameDisabled) {
       if (username === userCache || username === null) {
-        // console.log("keine änderung");
         username = userCache;
       } else {
         console.log(username);
@@ -152,7 +141,6 @@
   }
 
   async function updateUser() {
-    console.log(emailChache);
     try {
       const response = await axios.post("http://localhost:3001/update-user", {
         emailChache,
@@ -164,17 +152,15 @@
     }
   }
 
-  function linkPage() {
-    window.location.href = "#/Register";
-  }
 
   function run() {
-    checkToken();
+    if($loggedIn) {
+      checkToken();
+    }
   }
-  run();
 </script>
 
-{#if !loggedIn}
+{#if !$loggedIn}
   <form on:submit|preventDefault={loginUser}>
     <h1>Login</h1>
     <div>
@@ -236,13 +222,16 @@
         <button on:click={editUser}>Speichern</button>
       {/if}
     </div>
+    <p>{memberSince}</p>
+    <p>{devicecount}</p>
+    <button id="registerbtn" on:click={deleteUser}>delete</button>
     <button on:click={logoutUser}>Ausloggen</button>
   </form>
 {/if}
 
 <style>
   form {
-    margin-top: 10rem;
+    margin-top: 5rem;
     display: flex;
     flex-direction: column;
     align-items: center;

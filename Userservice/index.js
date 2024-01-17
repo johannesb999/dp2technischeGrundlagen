@@ -209,16 +209,21 @@ app.post("/register", async (req, res) => {
 //----Endpunkt für Login----
 app.post("/login", async (req, res) => {
   const users = await connectToDatabase();
-  // console.log(users);
+  console.log(users);
   const userData = {
     email: req.body.email,
     password: req.body.password,
   };
 
   const user = await users.findOne({ email: userData.email });
-  console.log(user);
+  console.log("Selected user:", user);
+  console.log(user.deleted);
+  if(user.deleted) {
+    return res.status(403).send("Dieser Nutzer wurde gelöscht");
+  }
   const username = user.username;
   console.log(username);
+  console.log(userData.password);
 
   const passworIsValid = await bcrypt.compare(userData.password, user.password);
 
@@ -231,6 +236,7 @@ app.post("/login", async (req, res) => {
   const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
+  console.log(token);
 
   res.status(200).json({ token, username });
 });
@@ -241,7 +247,36 @@ app.post("/logout", validateToken, (req, res) => {
   res.status(200).send("Erfolgreich abgemeldet");
 });
 
+app.post("/delete-user", validateToken, async (req, res) =>{
+  const users = await connectToDatabase();
+  const updateResult = await users.updateOne(
+    { _id: new ObjectId(req.user.userID) },
+    { $set: { deleted: true } }
+  );
+  if (updateResult.modifiedCount === 1) {
+    console.log("Nutzer erfolgreich als gelöscht markiert");
+    res.send("Nutzer erfolgreich als gelöscht markiert");
+  } else {
+    console.log("Nutzer nicht gefunden oder bereits als gelöscht markiert");
+    res.send("Nutzer nicht gefunden oder bereits als gelöscht markiert");
+  }
+})
 
+app.post("/restore-user", async (req, res) => {
+  const { email } = req.body;
+  const users = await connectToDatabase();
+
+  const updateResult = await users.updateOne(
+    { email: email, deleted: true },
+    { $set: { deleted: false } }
+  );
+
+  if (updateResult.modifiedCount === 1) {
+    res.send("Account erfolgreich wiederhergestellt.");
+  } else {
+    res.status(404).send("Account nicht gefunden oder bereits aktiv.");
+  }
+});
 
 
 

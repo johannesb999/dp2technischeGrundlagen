@@ -7,11 +7,15 @@
   import Health from "./Health.svelte";
   import Connect from "./Connect.svelte";
   import DeviceSettings from "./DeviceSettings.svelte";
+  import Buddy from "./Buddy.svelte";
+  import Nutzungsbedingungen from "./Nutzungsbedingungen.svelte";
 
-  import { User, Home, ChevronLeft } from 'lucide-svelte'
+  import { currentRoute, loggedIn } from './svelte-store';
+
+  import { User, Home, ChevronLeft, Droplet } from 'lucide-svelte'
 
   const routes = {
-    "/": Register,
+    "/": Login,
     "/Login": Login,
     "/Register": Register,
     "/Home": Homee,
@@ -19,27 +23,60 @@
     "/Health": Health,
     "/Connect": Connect,
     "/DeviceSettings": DeviceSettings,
+    "/Buddy": Buddy,
+    "/Nutzungsbedingungen": Nutzungsbedingungen,
   };
   function goback() {
     window.history.back();
   }
 
+  function changeRoute(route) {
+    currentRoute.set(route);
+    // ... Logik zur Anzeige der entsprechenden Komponente ...
+  }
+
+  function print() {
+    console.log()
+  }
 
 </script>
 
 <main>
+  {#if $currentRoute === '/Login'}
+    <div id='header'>
+      <h1>PlantMonit</h1>
+    </div>
+    <button on:click={print}>print</button> 
+    {#if $loggedIn}
+      <nav>
+        <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
+        <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
+        <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
+      </nav>
+    {/if}
+  {:else if $currentRoute === '/Home' || $currentRoute === '/Buddy'}
   <div id='header'>
-    <button on:click={goback} style="background-color: transparent; margin:0; padding:0;">
-      <ChevronLeft size={50}></ChevronLeft>  
-    </button>
     <h1>PlantMonit</h1>
   </div>
-  <Router {routes}></Router>
   <nav>
-    <a class="link" href="#/Login"><User></User></a>
-    <!-- <a class="link" href="#/Register">Register</a> -->
-    <a class="link" href="#/Home"><Home></Home></a>
+    <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
+    <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
+    <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
   </nav>
+  {:else }
+    <div id='header'>
+      <button on:click={goback} style="background-color: transparent; margin:0; padding:0;">
+        <ChevronLeft size={50}></ChevronLeft>  
+      </button>
+      <h1>PlantMonit</h1>
+    </div>
+    <nav>
+      <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
+      <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
+      <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
+    </nav>
+  {/if}
+  <Router {routes}></Router>
 </main>
 
 <style>
@@ -67,6 +104,7 @@
     display: flex;
     justify-content: space-around;
     position: fixed;
+    z-index: 1000;
     right: 0;
     bottom: 0;
     align-items: center;

@@ -23,6 +23,9 @@
     function button(uniqueDeviceID) {
 				return uniqueDeviceID == ''
 			}
+      function knopf(DeviceName) {
+        return DeviceName == ''
+      }
   
     async function connectDevice() {
       if (uniqueDeviceID != "") {
@@ -66,19 +69,19 @@
       <label for='deviceID'>DeviceID</label>
       <input id='deviceID' type='text' bind:value={uniqueDeviceID}>
     </div>
-    <button on:click={connectDevice} disabled={button(uniqueDeviceID)}>Verbinden</button>
-  {:else}
+    <button id='connectbtn' on:click={connectDevice} disabled={button(uniqueDeviceID)}>Verbinden</button>
+    {:else}
     <div>
       <h1>Richte dein Gerät ein</h1>
       <form on:submit|preventDefault={initialize}>
-        <div class='box'>
-            <label for='DeviceName'>Gerätename:</label>
-            <input placeholder={"Gerätename"} id='DeviceName' type='text' bind:value={DeviceName}>
+        <div id='testbox'>
+          <label for='DeviceName' style='font-size:22px;'>Gerätename:</label>
+          <input placeholder={"Gerätename"} id='DeviceName' type='text' bind:value={DeviceName}>
         </div>
         <div class='box'>
             <Radio {options} fontSize={22} legend='Gerätestandort:' bind:userSelected={radioValue}/>
         </div>
-        <button type='submit'>Ok</button>
+        <button id='submitbtn' disabled={knopf(DeviceName)} type='submit'>Ok</button>
       </form>
     </div>
   {/if}
@@ -91,7 +94,7 @@
       flex-direction: column;
       align-items: center;
       padding: 15px;
-      padding-top: 100px;
+      padding-top: 200px;
     }
 
     input {
@@ -101,6 +104,35 @@
       padding: 0.5rem;
       border: 1px solid #000000;
       border-radius: 0.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* width: %; */
+    }
+    .box {
+      /* border: 2px solid red; */
+      width: 93%;
+    }
+
+    #testbox {
+      width: 93%;
+    }
+    #submitbtn {
+      margin-top: 50px;
+      width: 93%;
+    }
+
+    #connectbtn {
+      width: 86%;
+      margin-top: 2rem;
+    }
+    #DeviceName {
+      width: 93%;
+      margin-top: 0.5rem;
+      margin-bottom: 2rem;
     }
   </style>
   
