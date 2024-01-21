@@ -67,7 +67,6 @@
   // axios interceptor for JWT
   axios.interceptors.request.use(
     (config) => {
-      // console.log("interceptorToken:", currentToken);
       if (currentToken) {
         config.headers.authorization = `Bearer ${currentToken}`;
       } else {
@@ -222,10 +221,16 @@
         <button on:click={editUser}>Speichern</button>
       {/if}
     </div>
-    <p>{memberSince}</p>
-    <p>{devicecount}</p>
-    <button id="registerbtn" on:click={deleteUser}>delete</button>
-    <button on:click={logoutUser}>Ausloggen</button>
+    <div>
+      <input disabled placeholder={memberSince}/>
+    </div>
+    <div>
+      <input disabled placeholder={devicecount}/>
+    </div>
+    <!-- <p>{memberSince}</p> -->
+    <!-- <p>{devicecount}</p> -->
+    <button id="registerbtn" on:click={deleteUser} style="margin-top: 15px;">delete</button>
+    <button on:click={logoutUser} style="margin-top: 6px;">Ausloggen</button>
   </form>
 {/if}
 

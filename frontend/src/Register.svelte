@@ -1,5 +1,6 @@
 <script>
   import axios from "axios";
+  import {push} from "svelte-spa-router";
 
   let username = "";
   let password = "";
@@ -45,7 +46,7 @@
       console.log("Login erfolgreich:", answer);
       token.set(answer.data.token); 
       loggedIn.update(prev => true); 
-      window.location.href = "#/Home";
+      push("/Home");
     } catch (error) {
       console.error("Fehler bei der Registrierung:", error);
       
