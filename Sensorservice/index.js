@@ -3,14 +3,15 @@ const mqtt = require("mqtt");
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
-const openai = new OpenAI({apiKey: `${process.env.OpenAIKey}`});
+const openai = new OpenAI({ apiKey: `${process.env.OpenAIKey}` });
 const clientId = `mqtt_${uuidv4()}`;
+const fs = require("fs");
 
 // MongoDB models
 const Device = require("./Models/Device");
 const Measurement = require("./Models/Measurement");
 
-//API STUFF
+// API STUFF
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
@@ -18,24 +19,22 @@ const cors = require("cors");
 app.use(cors());
 const rawBodyParser = bodyParser.raw({ type: "image/jpeg", limit: "10mb" });
 const images = [];
+let imagetest;
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(process.env.MONGODB_URI);
 
 app.get("/", (req, res) => {
   res.send("Hello, world!");
 });
 
-//api endpoints
+// API endpoints
 app.post("/api/addpicture", rawBodyParser, (req, res) => {
   if (req.body && req.body.length) {
     console.log(`Empfangene Bildgröße: ${req.body.length} Bytes`);
     res.send("Bild erfolgreich empfangen!");
     images.push(req.body);
-    // save the image into an file
+    imagetest = req.body;
     console.log(req.body);
     main(req.body);
   } else {
@@ -44,10 +43,14 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
 });
 
 app.get("/api/getpicture", (req, res) => {
-  // response as imaga/jpeg
-  res.set("Content-Type", "image/jpeg");
-  res.send(images[images.length - 1]);
-  console.log("Bild wird angefragt");
+  try {
+    res.set("Content-Type", "image/jpeg");
+    const base64_image = Buffer.from(imagetest).toString("base64");
+    res.status(200).send(base64_image);
+    console.log("Bild wird angefragt");
+  } catch (err) {
+    res.status(500).send({ error: "Fehler beim Abrufen der Daten" });
+  }
 });
 
 app.get("/api/measurements", async (req, res) => {
@@ -65,13 +68,10 @@ app.get("/api/measurements", async (req, res) => {
   }
 });
 
-//API STUFF ENDE
-
 async function main(image) {
-  // convert from uint8 Array butter to base64
   if (!image) return;
   const base64_image = Buffer.from(image).toString("base64");
-  // updateImage(`data:image/jpeg;base64,${base64Image}`);
+  console.log(base64_image);
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
@@ -95,51 +95,16 @@ async function main(image) {
     max_tokens: 300,
   });
   console.log(response.choices[0]);
-  if (!image) return;
 }
 
-// Funktion zum Lesen der Umgebungsvariablen aus .env
-const readEnvVariables = () => {
-  try {
-    const data = fs.readFileSync(".env.example", "utf8");
-    return data
-      .split("\n")
-      .filter((line) => line.trim() !== "" && !line.startsWith("#"))
-      .map((line) => line.split("=")[0]);
-  } catch (err) {
-    console.error(`Fehler beim Lesen der .env-Datei: ${err}`);
-    return [];
-  }
-};
-
-// Extrahieren der Umgebungsvariablen
-const requiredEnvVariables = readEnvVariables();
-
-// Überprüfen, ob alle erforderlichen Umgebungsvariablen definiert sind
-for (const varName of requiredEnvVariables) {
-  if (!process.env[varName]) {
-    console.log(`Fehler: Umgebungsvariable ${varName} nicht definiert.`);
-    process.exit(1); // Beendet das Skript mit einem Fehlercode
-  }
-}
-
-// Überprüfen, ob das MQTT_TOPIC_VALUES definiert und nicht leer ist
-if (!process.env.MQTT_TOPIC_VALUES) {
-  console.error("Fehler: MQTT_TOPIC_VALUES ist nicht definiert.");
-  process.exit(1);
-}
-
-// MQTT STUFF:
-
+// MQTT STUFF
 const mqttClient = mqtt.connect(process.env.MQTT_BROKER_URL, { clientId });
 
 mqttClient.on("connect", function () {
-  // Loggen der Client-ID im Topic "dp2/logs"
   const logMessage = `Client ${clientId} verbunden.`;
   mqttClient.publish("dp2/logs", logMessage + "(Jo)");
   console.log(logMessage);
 
-  // Subscribe auf Topics
   mqttClient.subscribe(process.env.MQTT_TOPIC_VALUES, function (err) {
     if (!err) {
       console.log(
@@ -151,7 +116,6 @@ mqttClient.on("connect", function () {
 
 mqttClient.on("message", async (topic, message) => {
   if (topic === process.env.MQTT_TOPIC_VALUES) {
-    // Verarbeiten der MQTT-Nachricht mit Mongoose
     const data = JSON.parse(message.toString());
     if (data.Value != null && data.mac != null && data.SensorType != null) {
       let device = await Device.findOne({ UniqueDeviceID: data.mac });
@@ -159,7 +123,7 @@ mqttClient.on("message", async (topic, message) => {
         device = new Device({
           UniqueDeviceID: data.mac,
           DeviceName: `Gerät ${data.mac}`,
-          OwnerID: "1",
+          OwnerID: new mongoose.Types.ObjectId(), // Erzeugt eine neue, zufällige ObjectId
         });
         await device.save();
       }

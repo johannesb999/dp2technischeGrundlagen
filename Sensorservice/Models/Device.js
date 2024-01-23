@@ -7,10 +7,10 @@ const deviceSchema = new mongoose.Schema(
       unique: true,
       required: true,
     },
-    OwnerID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+    // OwnerID: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "User",
+    // },
     DeviceName: String,
     createdAt: {
       type: Date,

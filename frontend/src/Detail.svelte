@@ -2,16 +2,16 @@
   //   --------------Seitenweite Importe und Variablen--------------
   import { onMount } from "svelte";
   import axios from "axios";
-  import {Settings} from 'lucide-svelte';
-  import DeviceSettings from './DeviceSettings.svelte';
+  import { Settings } from "lucide-svelte";
+  import DeviceSettings from "./DeviceSettings.svelte";
   //   --------------Daten Importe und Variablen--------------
   import * as echarts from "echarts";
   let chartInstances = {};
   let activeTab = "Daten";
 
   const url = new URL(window.location.href);
-  const params = new URLSearchParams(url.hash.split('?')[1]);
-  const deviceId = params.get('deviceId');
+  const params = new URLSearchParams(url.hash.split("?")[1]);
+  const deviceId = params.get("deviceId");
   console.log(deviceId);
   //   --------------Gesundheit Importe und Variablen--------------
 
@@ -37,19 +37,27 @@
   });
   function initializeCharts() {
     if (!chartInstances["Humidity"]) {
-      chartInstances["Humidity"] = echarts.init(document.getElementById("humidity-chart"));
+      chartInstances["Humidity"] = echarts.init(
+        document.getElementById("humidity-chart")
+      );
     }
     if (!chartInstances["LDR"]) {
-      chartInstances["LDR"] = echarts.init(document.getElementById("ldr-chart"));
+      chartInstances["LDR"] = echarts.init(
+        document.getElementById("ldr-chart")
+      );
     }
     if (!chartInstances["SoilMoisture"]) {
-      chartInstances["SoilMoisture"] = echarts.init(document.getElementById("soilmoisture-chart"));
+      chartInstances["SoilMoisture"] = echarts.init(
+        document.getElementById("soilmoisture-chart")
+      );
     }
     if (!chartInstances["Temperature"]) {
-      chartInstances["Temperature"] = echarts.init(document.getElementById("temperature-chart"));
+      chartInstances["Temperature"] = echarts.init(
+        document.getElementById("temperature-chart")
+      );
     }
     console.log(chartInstances);
-}
+  }
 
   async function fetchDeviceData() {
     try {
@@ -71,7 +79,7 @@
       }
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
-      window.location.href='./';
+      window.location.href = "./";
     }
   }
 
@@ -114,7 +122,7 @@
           smooth: true, // Glättet die Linie
           lineStyle: {
             width: 2,
-            color: '#42A5F5' // Blaue Farbe für die Linie
+            color: "#42A5F5", // Blaue Farbe für die Linie
           },
           name: chartKey,
           data: data.map((item) => item.value),
@@ -125,7 +133,6 @@
           },
         },
       ],
-      
     };
 
     chartInstances[chartKey].setOption(option);
@@ -136,24 +143,29 @@
 
   //   -----------------Ende Gesundheit logik-----------------
 
-  //   -----------------Gallerie logik----------------------
-  // function updateImage(data) {
-  //   base64Image = data;
-  //   console.log(base64Image);
-  // }
+  // -----------------Gallerie logik----------------------
+  function updateImage(data) {
+    base64Image = data;
+    console.log(base64Image);
+  }
 
-  // async function fetchLatestImage() {
-  //   try {
-  //     const response = await axios.get("http://localhost:3000/api/getpicture");
+  let bildstring = "";
+  let showimage = false;
 
-  //     updateImage(response.data); // Verwenden der updateImage Funktion
-  //     console.log(base64Image);
-  //   } catch (error) {
-  //     console.error("Fehler beim Abrufen des Bildes:", error);
-  //   }
-  // }
+  async function fetchLatestImage() {
+    try {
+      const response = await axios.get("http://localhost:3000/api/getpicture");
+      console.log(response);
+      bildstring = response.data;
+      showimage = true;
+      // const base64_image = Buffer.from().toString("base64");
+      // updateImage(response.data); // Verwenden der updateImage Funktion
+    } catch (error) {
+      console.error("Fehler beim Abrufen des Bildes:", error);
+    }
+  }
 
-  //   -----------------Ende Gallerie logik----------------
+  // -----------------Ende Gallerie logik----------------
   function run() {
     fetchDeviceData();
   }
@@ -165,30 +177,36 @@
   <div
     class={activeTab === "Daten" ? "tab active" : "tab"}
     on:click={() => {
-      (activeTab = "Daten")
+      activeTab = "Daten";
       // initializeCharts();
       // if (!chartInstances["Humidity"]) {
-      chartInstances["Humidity"].resize(document.getElementById("humidity-chart"));
-    // }
-    // if (!chartInstances["LDR"]) {
+      chartInstances["Humidity"].resize(
+        document.getElementById("humidity-chart")
+      );
+      // }
+      // if (!chartInstances["LDR"]) {
       chartInstances["LDR"].resize(document.getElementById("ldr-chart"));
-    // }
-    // if (!chartInstances["SoilMoisture"]) {
-      chartInstances["SoilMoisture"].resize(document.getElementById("soilmoisture-chart"));
-    // }
-    // if (!chartInstances["Temperature"]) {
-      chartInstances["Temperature"].resize(document.getElementById("temperature-chart"));
-    // }
-    //   setTimeout(() => {
-    //   // Rufen Sie resize für jede Chart-Instanz auf
-    //   Object.values(chartInstances).forEach(chartInstance => {
-    //     if (chartInstance) {
-    //       console.log(chartInstance);
-    //       chartInstance.resize(document.getElementById("humidity-chart"));
-    //     }
-    //   });
-    // }, 0);
-      }}
+      // }
+      // if (!chartInstances["SoilMoisture"]) {
+      chartInstances["SoilMoisture"].resize(
+        document.getElementById("soilmoisture-chart")
+      );
+      // }
+      // if (!chartInstances["Temperature"]) {
+      chartInstances["Temperature"].resize(
+        document.getElementById("temperature-chart")
+      );
+      // }
+      //   setTimeout(() => {
+      //   // Rufen Sie resize für jede Chart-Instanz auf
+      //   Object.values(chartInstances).forEach(chartInstance => {
+      //     if (chartInstance) {
+      //       console.log(chartInstance);
+      //       chartInstance.resize(document.getElementById("humidity-chart"));
+      //     }
+      //   });
+      // }, 0);
+    }}
   >
     Daten
   </div>
@@ -206,21 +224,31 @@
   </div>
 </div>
 
-
 <!-- Inhalt der Tabs -->
 <!-- Inhalt für DatenTab -->
-<button id='settingsbtn' on:click={()=>{window.location.href = `#/DeviceSettings?deviceId=${deviceId}`}}>
+<button
+  id="settingsbtn"
+  on:click={() => {
+    window.location.href = `#/DeviceSettings?deviceId=${deviceId}`;
+  }}
+>
   <Settings></Settings>
 </button>
 {#if activeTab === "Daten"}
-<div id='chartcontainer'>  
-  <div class='chart' id="humidity-chart"></div>
-  <div class='chart' id="ldr-chart"></div>
-  <div class='chart' id="soilmoisture-chart"></div>
-  <div class='chart' id="temperature-chart"></div>
-</div>
-    <!-- Inhalt für Gesundheit -->
+  <div id="chartcontainer">
+    <div class="chart" id="humidity-chart"></div>
+    <div class="chart" id="ldr-chart"></div>
+    <div class="chart" id="soilmoisture-chart"></div>
+    <div class="chart" id="temperature-chart"></div>
+  </div>
+  <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
+  <button on:click={fetchLatestImage}></button>
+  {#if showimage}
+    <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
+  {:else}
+    <p>Bild wird geladen...</p>
+  {/if}
   <!-- Ihr Inhalt für Gesundheit -->
   <div class="health-tab">
     <div class="status-message">
@@ -252,11 +280,16 @@
 {:else if activeTab === "Gallerie"}
   <!-- Ihr Inhalt für Gallerie -->
   {#if base64Image}
-    <img src={base64Image} alt="Aktuelles Bild aus der API" />
+    <img
+      src={`data:image/jpeg;base64,${base64Image}`}
+      alt="Aktuelles Bild aus der API"
+    />
   {:else}
     <p>Bild wird geladen...</p>
-  {/if}{/if}
-  <!-- <DeviceSettings></DeviceSettings> -->
+  {/if}
+{/if}
+
+<!-- <DeviceSettings></DeviceSettings> -->
 
 <style>
   #chartcontainer {
@@ -279,13 +312,13 @@
     background: #9a9a9a;
   }
   .tabs {
-    width:70%;
+    width: 70%;
     margin-left: auto;
     margin-right: auto;
     min-height: 50px;
     margin-top: 100px;
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+    grid-template-columns: repeat(3, 1fr);
     padding: 1px;
     background: #161616;
     border-radius: 100px;
@@ -298,15 +331,14 @@
     justify-content: center;
     align-items: center;
   }
-.chart {
-  padding: 0;
-  margin-top: 10px;
-  margin-left: auto;
-  margin-right: auto;
-  width: 90vw;
-  height: 300px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 15px;
-}
-
+  .chart {
+    padding: 0;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 90vw;
+    height: 300px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+  }
 </style>
