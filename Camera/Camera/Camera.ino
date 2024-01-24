@@ -15,6 +15,7 @@
 
 
 WiFiClient espClient;
+unsigned long startTime;
 
 uint32_t lastPictureForAutoExposure = 0;
 uint16_t numCorrectionFrames = 0;
@@ -24,21 +25,47 @@ void initWiFi() {
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
   bool connected = wifiManager.autoConnect("EspCam32J");
-  Serial.println("Verbunden mit WiFi");
-  Serial.print("IP-Adresse: ");
-  Serial.println(WiFi.localIP());
+  if (connected) {
+    Serial.println("Verbunden mit WiFi");
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());  // Zeigt die SSID des verbundenen Netzwerks an
+    Serial.print("IP-Adresse: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("Verbindung mit WiFi fehlgeschlagen");
+  }
 }
+
 
 WebSocketsClient webSocket;
 
 void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
   if (type == WStype_TEXT) {
     String receivedData = String((char*)payload);
-    // Hier verarbeiten Sie die empfangenen Daten (z.B. die WLAN-Credentials extrahieren)
     Serial.println("Empfangene Daten: " + receivedData);
-    // Weiterer Code zum Verbinden mit dem WLAN, etc.
+
+    // Trennen der empfangenen Daten in SSID und Passwort
+    int ssidStart = receivedData.indexOf("SSID:") + 5;
+    int pwdStart = receivedData.indexOf(";PW:") + 4;
+
+    String ssid = receivedData.substring(ssidStart, receivedData.indexOf(";", ssidStart));
+    String password = receivedData.substring(pwdStart, receivedData.length());
+
+    // Verwenden der Credentials, um sich mit dem WLAN zu verbinden
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+    // Warten auf Verbindung
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+
+    Serial.println("\nVerbunden mit WiFi");
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
   }
 }
+
 
 
 void initCamera() {
@@ -83,6 +110,7 @@ void initCamera() {
 }
 
 void setup() {
+  startTime = millis();  
   // Serial port for debugging purposes
   Serial.begin(115200);
   initWiFi();
@@ -107,7 +135,9 @@ void setup() {
 void loop() {
 
   // Pflege des WebSocket-Clients
-  webSocket.loop();
+  if (millis() - startTime < 240000) { 
+    webSocket.loop();
+  }
 
   // Überprüfen Sie, ob es Zeit ist, ein Bild zu nehmen und zu senden
   if (millis() % 10000 == 0) {

@@ -17,8 +17,10 @@
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
-const char* ApSsid = "PlantappMaster";
-const char* ApPassword = "12345678";
+// Websocket stuff///////////////////////
+unsigned long startTime;
+const char* ApSsid = AP_SSID;
+const char* ApPassword = AP_PASSWORD;
 
 // Definieren Sie den WebSocket-Server auf Port 81
 WebSocketsServer webSocket = WebSocketsServer(81);
@@ -58,6 +60,7 @@ void sendSensorData(const char* sensorType, float value) {
 
 void setup() {
   Serial.begin(115200);
+  startTime = millis();  
   dht.begin();
 
   WiFiManager wifiManager;
@@ -122,7 +125,10 @@ void loop() {
   client.loop();
 
   // WebSocket-Server pflegen
-  webSocket.loop();
+  if (millis() - startTime < 300000) { // 300000 Millisekunden = 5 Minuten
+    webSocket.loop();
+  }
+
   unsigned long currentTime = millis();
 
   // Temperaturdaten auslesen und senden
