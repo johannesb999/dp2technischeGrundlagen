@@ -73,13 +73,11 @@ void setup() {
     // Wenn die Verbindung hergestellt ist, die WLAN-Credentials auslesen
     String ssid = WiFi.SSID();
     String password = WiFi.psk();
-
     Serial.println("Verbunden mit WiFi");
     Serial.println("SSID: " + ssid);
     Serial.println("Passwort: " + password);
   }
   // Wenn die Verbindung hergestellt ist, drucken Sie die IP-Adresse
-  Serial.println("Verbunden mit WiFi");
   Serial.println("IP-Adresse: ");
   Serial.println(WiFi.localIP());
 
@@ -185,7 +183,8 @@ void reconnect() {
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(10000);
+      ESP.restart(); 
     }
   }
 }

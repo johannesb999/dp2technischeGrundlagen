@@ -6,7 +6,7 @@
 #include "driver/rtc_io.h"
 #include <SPIFFS.h>
 #include <FS.h>
-#include <WiFiManager.h>
+// #include <WiFiManager.h>
 #include <Base64.h>
 // Provide the token generation process info.
 #include "config.h"
@@ -17,24 +17,36 @@
 WiFiClient espClient;
 unsigned long startTime;
 
+// Stellen Sie sicher, dass diese Werte korrekt sind
+const char* fallbackSSID = "PlantappMaster";
+const char* fallbackPassword = "12345678";
+
 uint32_t lastPictureForAutoExposure = 0;
 uint16_t numCorrectionFrames = 0;
 bool takePicture = false;
 
-void initWiFi() {
-  WiFiManager wifiManager;
-  // wifiManager.resetSettings();
-  bool connected = wifiManager.autoConnect("EspCam32J");
-  if (connected) {
-    Serial.println("Verbunden mit WiFi");
-    Serial.print("SSID: ");
-    Serial.println(WiFi.SSID());  // Zeigt die SSID des verbundenen Netzwerks an
-    Serial.print("IP-Adresse: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("Verbindung mit WiFi fehlgeschlagen");
+void checkAndReconnectWiFi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi-Verbindung verloren. Versuche, mit dem Fallback-WLAN zu verbinden...");
+
+    WiFi.begin(fallbackSSID, fallbackPassword);
+      startTime = millis();
+
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
+      delay(500);
+      Serial.print(".");
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nVerbunden mit Fallback-WiFi.");
+    } else {
+      Serial.println("\nVerbindung mit Fallback-WiFi fehlgeschlagen.");
+      // Weitere Schritte, falls die Verbindung fehlschlägt, z.B. Neustart
+    }
   }
 }
+
 
 
 WebSocketsClient webSocket;
@@ -110,10 +122,10 @@ void initCamera() {
 }
 
 void setup() {
-  startTime = millis();  
+  startTime = millis();
   // Serial port for debugging purposes
   Serial.begin(115200);
-  initWiFi();
+  // initWiFi();
 
   // Konfigurieren des WebSocket-Clients
   webSocket.begin("192.168.4.1", 81, "/");  // Ersetzen Sie "server_ip" mit der IP-Adresse des WebSocket-Servers
@@ -135,9 +147,10 @@ void setup() {
 void loop() {
 
   // Pflege des WebSocket-Clients
-  if (millis() - startTime < 240000) { 
+  if (millis() - startTime < 240000) {
     webSocket.loop();
   }
+  checkAndReconnectWiFi();
 
   // Überprüfen Sie, ob es Zeit ist, ein Bild zu nehmen und zu senden
   if (millis() % 10000 == 0) {
