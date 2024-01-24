@@ -11,23 +11,35 @@
 // Provide the token generation process info.
 #include "config.h"
 #include <HTTPClient.h>
+#include <WebSocketsClient.h>
 
 
 WiFiClient espClient;
 
-
 uint32_t lastPictureForAutoExposure = 0;
-
 uint16_t numCorrectionFrames = 0;
-
 bool takePicture = false;
 
 void initWiFi() {
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
   bool connected = wifiManager.autoConnect("EspCam32J");
-  Serial.println("Connected to WiFi.");
+  Serial.println("Verbunden mit WiFi");
+  Serial.print("IP-Adresse: ");
+  Serial.println(WiFi.localIP());
 }
+
+WebSocketsClient webSocket;
+
+void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
+  if (type == WStype_TEXT) {
+    String receivedData = String((char*)payload);
+    // Hier verarbeiten Sie die empfangenen Daten (z.B. die WLAN-Credentials extrahieren)
+    Serial.println("Empfangene Daten: " + receivedData);
+    // Weiterer Code zum Verbinden mit dem WLAN, etc.
+  }
+}
+
 
 void initCamera() {
   // OV2640 camera module
@@ -54,7 +66,7 @@ void initCamera() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if (psramFound()) {
-    config.frame_size = FRAMESIZE_VGA;  
+    config.frame_size = FRAMESIZE_VGA;
     config.jpeg_quality = 15;
     config.fb_count = 2;
   } else {
@@ -75,6 +87,11 @@ void setup() {
   Serial.begin(115200);
   initWiFi();
 
+  // Konfigurieren des WebSocket-Clients
+  webSocket.begin("192.168.4.1", 81, "/");  // Ersetzen Sie "server_ip" mit der IP-Adresse des WebSocket-Servers
+  webSocket.onEvent(webSocketEvent);
+  webSocket.setReconnectInterval(5000);  // Automatisches Neuverbinden alle 5 Sekunden
+
   // Turn-off the 'brownout detector'
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
   initCamera();
@@ -85,10 +102,13 @@ void setup() {
   s->set_exposure_ctrl(s, 1);  // auto exposure on
   s->set_awb_gain(s, 1);       // Auto White Balance enable (0 or 1)
   s->set_brightness(s, -4);
-  
 }
 
 void loop() {
+
+  // Pflege des WebSocket-Clients
+  webSocket.loop();
+
   // Überprüfen Sie, ob es Zeit ist, ein Bild zu nehmen und zu senden
   if (millis() % 10000 == 0) {
     camera_fb_t* fb = esp_camera_fb_get();
@@ -96,7 +116,7 @@ void loop() {
       Serial.println("Kameraaufnahme fehlgeschlagen");
       return;
     }
-    
+
     delay(50000);
 
     // HTTP-Client initialisieren
