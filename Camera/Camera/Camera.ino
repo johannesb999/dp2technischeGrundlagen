@@ -18,8 +18,8 @@ WiFiClient espClient;
 unsigned long startTime;
 
 // Stellen Sie sicher, dass diese Werte korrekt sind
-const char* fallbackSSID = "PlantappMaster";
-const char* fallbackPassword = "12345678";
+const char* masterSSID = "PlantappMaster";
+const char* masterPassword = "12345678";
 
 uint32_t lastPictureForAutoExposure = 0;
 uint16_t numCorrectionFrames = 0;
@@ -27,25 +27,40 @@ bool takePicture = false;
 
 void checkAndReconnectWiFi() {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi-Verbindung verloren. Versuche, mit dem Fallback-WLAN zu verbinden...");
+    Serial.println("WiFi-Verbindung verloren. Versuche, mit dem master-WLAN zu verbinden...");
 
-    WiFi.begin(fallbackSSID, fallbackPassword);
-      startTime = millis();
+    int maxReconnectAttempts = 20; // Maximale Anzahl von Verbindungsversuchen
+    int reconnectAttempts = 0; // Zähler für aktuelle Versuche
 
-    unsigned long startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 10000) {
-      delay(500);
-      Serial.print(".");
+    while (WiFi.status() != WL_CONNECTED && reconnectAttempts < maxReconnectAttempts) {
+      WiFi.begin(masterSSID, masterPassword);
+      
+      unsigned long startAttemptTime = millis();
+
+      while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 5000) {
+        delay(200);
+        Serial.print(".");
+      }
+
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\nVerbunden mit master-WiFi.");
+        return; // Verbindung erfolgreich, verlasse die Funktion
+      } else {
+        Serial.println("\nVersuch fehlgeschlagen, wiederhole...");
+        Serial.println( masterSSID);
+        reconnectAttempts++;
+      }
     }
 
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nVerbunden mit Fallback-WiFi.");
-    } else {
-      Serial.println("\nVerbindung mit Fallback-WiFi fehlgeschlagen.");
-      // Weitere Schritte, falls die Verbindung fehlschlägt, z.B. Neustart
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      Serial.println("Maximale Anzahl von Verbindungsversuchen erreicht. Neustart...");
+      reconnectAttempts = 0;
+      delay(5000);
+      ESP.restart(); // Neustart des ESP, da alle Verbindungsversuche fehlgeschlagen sind
     }
   }
 }
+
 
 
 
@@ -71,6 +86,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
       delay(500);
       Serial.print(".");
     }
+
 
     Serial.println("\nVerbunden mit WiFi");
     Serial.print("SSID: ");
