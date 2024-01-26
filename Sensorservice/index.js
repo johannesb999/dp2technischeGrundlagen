@@ -37,6 +37,7 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
     imagetest = req.body;
     console.log(req.body);
     main(req.body);
+    //Speichern in mongo
   } else {
     res.status(400).send("Keine Daten empfangen.");
   }
@@ -45,6 +46,7 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
 app.get("/api/getpicture", (req, res) => {
   try {
     res.set("Content-Type", "image/jpeg");
+    //Bild aus der DB holen 
     const base64_image = Buffer.from(imagetest).toString("base64");
     res.status(200).send(base64_image);
     console.log("Bild wird angefragt");
@@ -69,6 +71,7 @@ app.get("/api/measurements", async (req, res) => {
 });
 
 async function main(image) {
+  //funktion an API/Button im frontend binden, der antwort ans frontend schickt
   if (!image) return;
   const base64_image = Buffer.from(image).toString("base64");
   console.log(base64_image);
