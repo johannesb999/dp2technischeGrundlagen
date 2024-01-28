@@ -1,15 +1,13 @@
-// #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <DHT.h>
-#include <WiFiManager.h>
 #include "config.h"  // Dies bindet Ihre Konfigurationsdatei ein
 #include <ArduinoJson.h>
-
+#include <WiFiManager.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
-#include <ArduinoOTA.h>
-int led = LED_BUILTIN;
+#include <WebSocketsServer.h>
+
 
 #define SOIL_MOISTURE_PIN 32
 #define LDR_PIN 33
@@ -18,6 +16,34 @@ int led = LED_BUILTIN;
 #define DHTPIN 14
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
+
+// Websocket stuff///////////////////////
+unsigned long startTime;
+const char* ApSsid = AP_SSID;
+const char* ApPassword = AP_PASSWORD;
+
+bool shouldRestart = false; // Neue globale Variable
+
+void saveConfigCallback () {
+  Serial.println("Sollte neu starten, da neue Konfiguration gespeichert wurde.");
+  shouldRestart = true;
+}
+
+// Definieren Sie den WebSocket-Server auf Port 81
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+// WebSocket-Event-Handler
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+  if (type == WStype_CONNECTED) {
+    Serial.printf("WebSocket Client verbunden: %u\n", num);
+    // WLAN-Credentials senden
+    String ssid = WiFi.SSID();
+    String password = WiFi.psk();
+    String credentials = "SSID:" + ssid + ";PW:" + password;
+    webSocket.sendTXT(num, credentials);
+  }
+  // weitere Event-Typen können hier behandelt werden
+}
 
 // Initialisieren Sie den MQTT-Client
 WiFiClient espClient;
@@ -41,61 +67,42 @@ void sendSensorData(const char* sensorType, float value) {
 
 void setup() {
   Serial.begin(115200);
+  startTime = millis();
   dht.begin();
 
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
+  wifiManager.setConfigPortalTimeout(300);
+   wifiManager.setSaveConfigCallback(saveConfigCallback);
   // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
-  if (!wifiManager.autoConnect("Esp32Plantmonit1")) {
+  if (!wifiManager.autoConnect("Esp32Plantmonit")) {
     Serial.println("Fehler beim Verbinden und Timeout erreicht");
     ESP.restart();  // Neustart des ESP
+  } else {
+    // Wenn die Verbindung hergestellt ist, WLAN-Credentials auslesen
+    String ssid = WiFi.SSID();
+    String password = WiFi.psk();
+    Serial.println("Verbunden mit WiFi");
+    Serial.println("SSID: " + ssid);
+    Serial.println("Passwort: " + password);
+    
   }
-
-  // Wenn die Verbindung hergestellt ist, drucken Sie die IP-Adresse
-  Serial.println("Verbunden mit WiFi");
+  // Wenn die Verbindung hergestellt ist, drucken der IP-Adresse
   Serial.println("IP-Adresse: ");
   Serial.println(WiFi.localIP());
 
-  ArduinoOTA.setHostname("Johannesesp32WIFI");
-  ArduinoOTA.setPassword("admin");
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-  // ArduinoOTA.setPort(3232);
+  // WebSocket-Server starten
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
 
-  // OTA STUFF
-  ArduinoOTA
-    .onStart([]() {
-      String type;
-      if (ArduinoOTA.getCommand() == U_FLASH)
-        type = "sketch";
-      else  // U_SPIFFS
-        type = "filesystem";
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-
-  ArduinoOTA.begin();
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  // set LED to be an output pin
-  pinMode(led, OUTPUT);
+  // AP stuff
+  WiFi.mode(WIFI_AP_STA);  // Modus für Station + Access Point
+  WiFi.softAP(ApSsid, ApPassword);
+  Serial.print("Access Point \"");
+  Serial.print(ApSsid);
+  Serial.println("\" gestartet");
+  Serial.print("IP-Adresse: ");
+  Serial.println(WiFi.softAPIP());
 
   // Verbinden Sie sich mit dem MQTT Broker
   if (mqtt_port == 1883) {
@@ -107,21 +114,41 @@ void setup() {
   // client.setServer(mqtt_server, mqtt_port);
 }
 
-// OTA END
-
 unsigned long lastTempReadTime = 0;
 unsigned long lastHumidityReadTime = 0;
 unsigned long lastSoilMoistureReadTime = 0;
 unsigned long lastLightReadTime = 0;
 
-
+//timer für restart
+unsigned long lastWiFiCheck = 0;
+const unsigned long wifiReconnectInterval = 240000; // 4 Minuten
 
 void loop() {
-  ArduinoOTA.handle();
+  if (WiFi.status() != WL_CONNECTED) {
+    if (millis() - lastWiFiCheck > wifiReconnectInterval) {
+      Serial.println("WLAN-Verbindung verloren. Neustart...");
+      delay(1000);  // Kurze Verzögerung vor dem Neustart
+      ESP.restart();
+    }
+  } else {
+    lastWiFiCheck = millis();  // Aktualisiere die letzte erfolgreiche WLAN-Check-Zeit
+  }
+
+  if (shouldRestart) {
+    Serial.println("Neustart wegen neuer WiFi-Einstellungen...");
+    delay(1000);
+    ESP.restart();
+  }
+  // WebSocket-Server pflegen
+  if (millis() - startTime < 300000) {  // 300000 Millisekunden = 5 Minuten
+    webSocket.loop();
+  }
+
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
+
 
   unsigned long currentTime = millis();
 
@@ -162,24 +189,39 @@ void loop() {
 }
 
 
-
 void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+  // Anzahl der Versuche, sich neu zu verbinden
+  const int maxReconnectAttempts = 4;
+  int reconnectAttempts = 0;
+
+  // Loop bis zur erfolgreichen Verbindung oder zur maximalen Anzahl von Versuchen
+  while (!client.connected() && reconnectAttempts < maxReconnectAttempts) {
+    Serial.print("Attempting MQTT connection (Attempt ");
+    Serial.print(reconnectAttempts + 1);
+    Serial.print(" of ");
+    Serial.print(maxReconnectAttempts);
+    Serial.println(")...");
+    
     // Generate a random client ID
     String clientId = "ESP-Joe" + WiFi.macAddress();
-    // clientId += String(random(0xffff), HEX);
+    
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
-
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(1000);
+      reconnectAttempts++;
     }
+  }
+
+  // Überprüfen, ob die maximale Anzahl von Versuchen erreicht wurde
+  if (!client.connected()) {
+    Serial.println("Maximale Anzahl von Verbindungsversuchen erreicht. Neustart...");
+    delay(1000);  // Kurze Verzögerung vor dem Neustart
+    ESP.restart();
   }
 }
