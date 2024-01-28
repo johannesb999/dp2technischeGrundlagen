@@ -100,10 +100,60 @@ app.get("api/getGPTresponse", async(req, res) => {
   main(latestImage);
 })
 async function main(image) {
+  const prompt = `
+  Analyze the following image and return the information in JSON format.
+  Image: [Insert Base64-encoded image here]
+
+  Expected response format:
+  {
+    "Plant": "Name of the plant",
+    "Pests": "Name of the pests, if any",
+    "Disease": "Name of the disease, if any",
+    "Decay": "Yes or No",
+    "Bends": "Yes or No",
+    "Cracks": "Yes or No",
+    "Recommendation": "Brief description of recommended measures to ensure plants future health"
+  }
+  `;
+
+  const schema = {
+      type: "object",
+      properties: {
+        plant: {
+          type: "string",
+          description: "Name der Pflanze"
+        },
+        pests: {
+          type: "string",
+          description: "Vorhandensein von Schädlingen an der Pflanze, Antwort als 'ja' oder 'nein'"
+        },
+        disease: {
+          type: "string",
+          description: "Vorhandensein einer Krankheit, Antwort als 'ja' oder 'nein'"
+        },
+        rot: {
+          type: "string",
+          description: "Vorhandensein von Fäulnis, Antwort als 'ja' oder 'nein'"
+        },
+        kinks: {
+          type: "string",
+          description: "Vorhandensein von Verbiegungen, Antwort als 'ja' oder 'nein'"
+        },
+        cracks: {
+          type: "string",
+          description: "Vorhandensein von Rissen, Antwort als 'ja' oder 'nein'"
+        },
+        suggestion: {
+          type: "string",
+          description: "Dreisatz-Vorschlag zur Behandlung der erkannten Probleme"
+        }
+      },
+      required: ["plant", "pests", "disease", "rot", "kinks", "cracks", "suggestion"]
+  };
   //funktion an API/Button im frontend binden, der antwort ans frontend schickt
   if (!image) return;
   // const base64_image = Buffer.from(image).toString("base64");
-  console.log(base64_image);
+  console.log(image);
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
@@ -113,12 +163,12 @@ async function main(image) {
         content: [
           {
             type: "text",
-            text: 'Tell me the name of the plant you see. Check if the plant do have pests, rot, bends or cracks. If something is detected, also output the disease and suggest in three sentences what can be done about it. response as json in this format: {"plant": "plantname", "pests": "","Disease": "", "Rot": "", "Kinks": "","Cracks": "", "Suggestion": ""} . Answer in string should be yes or no. If you cant detect the plant just use Aphelandra squarrosa (zebra plant) as default and check for diseases',
+            text: prompt, 
           },
           {
             type: "image_url",
             image_url: {
-              url: `data:image/jpeg;base64,${base64_image}`,
+              url: `data:image/jpeg;base64,${image}`,
             },
           },
         ],
