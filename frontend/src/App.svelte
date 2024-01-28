@@ -49,19 +49,19 @@
     <button on:click={print}>print</button> 
     {#if $loggedIn}
       <nav>
-        <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
-        <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
-        <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
+        <a on:click={() => changeRoute('/Home')} class="tab" href="#/Home"><Home size={35}></Home></a>
+        <a on:click={() => changeRoute('/Buddy')} class="tab" href="#/Buddy"><Droplet size={33}></Droplet></a>
+        <a on:click={() => changeRoute('/Login')} class="tab active" href="#/Login"><User size={33}></User></a>
       </nav>
     {/if}
   {:else if $currentRoute === '/Home' || $currentRoute === '/Buddy'}
-  <div id='header'>
+  <div class='link' id='header'>
     <h1>PlantMonit</h1>
   </div>
   <nav>
-    <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
-    <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
-    <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
+    <a on:click={() => changeRoute('/Home')} class={$currentRoute === "/Home" ? "tab active" : "tab"} href="#/Home"><Home size={35}></Home></a>
+    <a on:click={() => changeRoute('/Buddy')} class={$currentRoute === "/Buddy" ? "tab active" : "tab"} href="#/Buddy"><Droplet size={33}></Droplet></a>
+    <a on:click={() => changeRoute('/Login')} class="tab" href="#/Login"><User size={33}></User></a>
   </nav>
   {:else }
     <div id='header'>
@@ -71,9 +71,9 @@
       <h1>PlantMonit</h1>
     </div>
     <nav>
-      <a on:click={() => changeRoute('/Home')} class="link" href="#/Home"><Home></Home></a>
-      <a on:click={() => changeRoute('/Buddy')} class="link" href="#/Buddy"><Droplet></Droplet></a>
-      <a on:click={() => changeRoute('/Login')} class="link" href="#/Login"><User></User></a>
+      <a on:click={() => changeRoute('/Home')} class='tab active' href="#/Home"><Home size={35}></Home></a>
+      <a on:click={() => changeRoute('/Buddy')} class="tab" href="#/Buddy"><Droplet size={33}></Droplet></a>
+      <a on:click={() => changeRoute('/Login')} class="tab" href="#/Login"><User size={33}></User></a>
     </nav>
   {/if}
   <Router {routes}></Router>
@@ -83,11 +83,13 @@
   #header {
     display: flex;
     position: fixed;
-    z-index: 100;
+    z-index: 100000000000;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    background-color: black;
+    background-color: rgb(46, 50, 45);
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
   main {
     padding: 0;
@@ -104,25 +106,25 @@
     display: flex;
     justify-content: space-around;
     position: fixed;
-    z-index: 1000;
+    z-index: 100000000;
     right: 0;
-    bottom: 0;
+    bottom: -1px;
     align-items: center;
-    background-color: #000000;
-    border-top-right-radius: 10px;
-    border-top-left-radius: 10px;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    background-color: rgba(46, 50, 45);
+    padding-top: 30px;
+    padding-bottom: 20px;
   }
-  .link {
+  .tab {
     color: #ffffff;
+  }
+  .active {
+    color: green;
   }
   h1 {
     margin:0;
     margin-right: auto;
     margin-left: auto;
     padding: 10px;
-    background-color: #000000;
     text-align: center;
   }
 </style>

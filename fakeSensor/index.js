@@ -10,20 +10,25 @@ const interval = parseInt(process.env.INTERVAL);
 const clientId = `mqttClient_${uuidv4()}`;
 const client = mqtt.connect(mqttBrokerUrl, { clientId });
 
-const randomMac = generateRandomMacAddress();
+const availableMacAddresses = ['50:BB:A4:14:5F:3C', '60:BB:A4:14:5F:3C', '20:BB:A4:14:5F:3C', '10:AE:A4:14:5F:3C'];
+const sensorTypes = ["Humidity", "Temperature", "SoilMoisture", "LDR"];
 
 client.on('connect', () => {
     console.log(`Connected to MQTT Broker with Client ID: ${clientId}`);
     client.publish(logsTopic, `Fake Sensor with Client ID ${clientId} connected`);
 
     setInterval(() => {
-        const message = JSON.stringify({
-            temperature: generateRandomTemperature(),
-            mac: randomMac,
-
+        availableMacAddresses.forEach(mac => {
+            sensorTypes.forEach(sensorType => {
+                const message = JSON.stringify({
+                    mac: mac,
+                    SensorType: sensorType,
+                    Value: generateRandomValue()
+                });
+                client.publish(topic, message);
+                console.log(`Message published to ${topic}: ${message}`);
+            });
         });
-        client.publish(topic, message);
-        console.log(`Message published to ${topic}: ${message}`);
     }, interval);
 });
 
@@ -32,27 +37,9 @@ client.on('error', (error) => {
     client.end();
 });
 
-function generateRandomTemperature() {
-    return Math.random() * 20 + 10;
+function generateRandomValue() {
+    return Math.random() * 100;
 }
-
-function generateRandomMacAddress() {
-    const hexDigits = "0123456789ABCDEF";
-    let macAddress = "";
-    for (let i = 0; i < 6; i++) {
-        macAddress += hexDigits.charAt(Math.floor(Math.random() * 16));
-        macAddress += hexDigits.charAt(Math.floor(Math.random() * 16));
-        if (i !== 5) {
-            macAddress += ":";
-        }
-    }
-    return macAddress;
-}
-
-// Example usage:
-console.log(generateRandomMacAddress());
-
-
 
 process.on('SIGINT', () => {
     console.log('Disconnecting...');

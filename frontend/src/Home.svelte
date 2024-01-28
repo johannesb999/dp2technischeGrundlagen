@@ -2,17 +2,21 @@
   import axios from "axios";
   import Device from "./lib/Device.svelte";
   import {Plus} from 'lucide-svelte';
+  import {ListChecks} from 'lucide-svelte';
   import {currentRoute, loggedIn} from './svelte-store';
+  import { push } from "svelte-spa-router";
+  import Devicemin from "./lib/Devicemin.svelte";
 
   let devices = [];
   let autherdevices = [];
   let innerdevices = [];
   let activeTab = "Alle";
+  let min = false;
 
   async function getDevices() {
     console.log("tester")
     try {
-      const response = await axios.post("http://localhost:3001/get-devices");
+      const response = await axios.post("http://localhost:3000/get-devices");
       // console.log(response);
       devices = response.data;
       console.log(devices);
@@ -20,14 +24,11 @@
       innerdevices = devices.filter(device => device.location == "Innen");
     } catch (error) {
       console.error("Der Nutzer hate keine verbundenen Geräte", error);
-      window.location.href = '#/Login'
+      // window.location.href = '#/Login'
+      push('/Login');
       loggedIn.update(prev => false);
       currentRoute.set('/Login');
     }
-  }
-
-  function connectDevice() {
-    window.location.href = '#/Connect';
   }
 
   function run() {
@@ -60,16 +61,20 @@
 
 <!-- Felder zur Geräteverbindung -->
 
-
+<button id='toggle' on:click={() =>{min = !min}}><ListChecks /></button>
 {#if activeTab === "Alle"}
 <main class='kjhgfd'>
   {#each devices as device}
-    <Device {device}/> 
+    {#if !min}
+      <Device {device}/>
+    {:else}
+      <Devicemin {device}></Devicemin>
+    {/if}
   {/each}
   <!-- Feld zur Abfrage von Gerätedaten -->
-  <button id='newDevice' on:click={connectDevice}>
+  <!-- <button id='newDevice' on:click={connectDevice}>
     <Plus size='40'></Plus>
-  </button>
+  </button> -->
 </main>
 
   {:else if activeTab === "Innen"}
@@ -78,9 +83,9 @@
     <Device {device}/> 
   {/each}
   <!-- Feld zur Abfrage von Gerätedaten -->
-  <button id='newDevice' on:click={connectDevice}>
+  <!-- <button id='newDevice' on:click={connectDevice}>
     <Plus size='40'></Plus>
-  </button>
+  </button> -->
 </main>
 
   {:else if activeTab === "Außen"}
@@ -89,14 +94,51 @@
       <Device {device}/> 
     {/each}
     <!-- Feld zur Abfrage von Gerätedaten -->
-    <button id='newDevice' on:click={connectDevice}>
-      <Plus size='40'></Plus>
-    </button>
   </main>
   
   {/if}
+  <button id='newDevice' on:click={()=> {push('/Connect')}}>
+    <Plus size='40'></Plus>
+  </button>
   
 <style>
+  #toggle{
+    display: flex;
+    width: fit-content;
+    height: fit-content;
+    position: absolute;
+    right: 5px;
+    top: 92px;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: space-around;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 18px;
+  }
+  .tabs {
+    width:70%;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 50px;
+    margin-top: 100px;
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    padding: 1px;
+    overflow: hidden;
+  }
+  .tab {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .active {
+    border-bottom: 2px solid greenyellow;
+  }
 
   .kjhgfd {
     /* margin-top: 100px; */
@@ -108,7 +150,7 @@
     align-items: center;
     padding:20px;
     padding-bottom: 80px;
-    padding-top: 50px;
+    padding-top: 30px;
   }
   
   button {
@@ -118,48 +160,16 @@
     border-radius: 0.5rem;
   }
   #newDevice {
-    border-radius: 100px;
+    position: fixed;
+    right:10px;
+    bottom: 80px;
+    border-radius: 10px;
     text-align: center;
     display: flex;
     width: fit-content;
+    background-color: rgba(156, 187, 118);
+    border: 1px solid #393739;
+    box-shadow: -2px 2px 10px #393739;
   }
 
-  .active {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .tabs {
-    width:70%;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 100px;
-    min-height: 50px;
-    /* margin: px; */
-    /* margin-top: 20px; */
-    display: grid;
-    grid-template-columns: repeat(3,1fr);
-    /* display: flex;
-    justify-content: space-around; */
-    padding: 1px;
-    background: #161616;
-    border-radius: 100px;
-    overflow: hidden;
-  }
-  .tab {
-    /* border: 2px solid red; */
-    padding: 10px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    /* margin-left: auto;
-    margin-right: auto; */
-  }
-  .active {
-    background: #9a9a9a;
-    color: black;
-    /* text-decoration: underline; */
-  }
 </style>

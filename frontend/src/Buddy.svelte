@@ -8,10 +8,10 @@
   
     onMount(async () => {
     try {
-      const response = await axios.post('http://localhost:3001/get-devices');
+      const response = await axios.post('http://localhost:3000/get-devices');
       console.log(response);
       devices = await Promise.all(response.data.map(async (device) => {
-        const measurementsResponse = await axios.post('http://localhost:3001/device-data', { deviceId: device._id });
+        const measurementsResponse = await axios.post('http://localhost:3000/device-data', { deviceId: device._id });
         console.log(measurementsResponse);
         // Überprüfen Sie, ob SoilMoisture-Daten vorhanden sind
         const soilMoistureData = measurementsResponse.data && measurementsResponse.data['SoilMoisture']

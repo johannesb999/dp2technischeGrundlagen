@@ -1,12 +1,13 @@
 <script>
   //   --------------Seitenweite Importe und Variablen--------------
-  import { onMount } from "svelte";
   import axios from "axios";
+  import {push} from "svelte-spa-router";
+  import { onMount, onDestroy } from 'svelte';
   import { Settings } from "lucide-svelte";
   import DeviceSettings from "./DeviceSettings.svelte";
+  import Daten from "./lib/Daten.svelte";
   //   --------------Daten Importe und Variablen--------------
-  import * as echarts from "echarts";
-  let chartInstances = {};
+
   let activeTab = "Daten";
 
   const url = new URL(window.location.href);
@@ -32,111 +33,7 @@
   //   );
   //   // fetchLatestImage(); // Dies ruft das neueste Bild beim Laden der Komponente ab
   // });
-  onMount(() => {
-    initializeCharts();
-  });
-  function initializeCharts() {
-    if (!chartInstances["Humidity"]) {
-      chartInstances["Humidity"] = echarts.init(
-        document.getElementById("humidity-chart")
-      );
-    }
-    if (!chartInstances["LDR"]) {
-      chartInstances["LDR"] = echarts.init(
-        document.getElementById("ldr-chart")
-      );
-    }
-    if (!chartInstances["SoilMoisture"]) {
-      chartInstances["SoilMoisture"] = echarts.init(
-        document.getElementById("soilmoisture-chart")
-      );
-    }
-    if (!chartInstances["Temperature"]) {
-      chartInstances["Temperature"] = echarts.init(
-        document.getElementById("temperature-chart")
-      );
-    }
-    console.log(chartInstances);
-  }
 
-  async function fetchDeviceData() {
-    try {
-      console.log("fetching data");
-      const response = await axios.post("http://localhost:3001/device-data", {
-        deviceId,
-      });
-      if (response.data) {
-        Object.keys(response.data).forEach((key) => {
-          const data = response.data[key].map((value, index) => ({
-            value,
-            name: index.toString(),
-          }));
-          let nicedata = data.slice(0, 10);
-          let reallynicedata = nicedata.reverse();
-          // console.log(data);
-          setChartData(key, reallynicedata);
-        });
-      }
-    } catch (error) {
-      console.error("Fehler beim Abrufen der Gerätedaten:", error);
-      window.location.href = "./";
-    }
-  }
-
-  function setChartData(chartKey, data) {
-    const colorMap = {
-      Humidity: "#80FFA5",
-      LDR: "#00DDFF",
-      SoilMoisture: "#37A2FF",
-      Temperature: "#FF0087",
-    };
-
-    let gradientColor = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-      { offset: 0, color: colorMap[chartKey] }, // Farbe am Anfang
-      { offset: 1, color: "white" }, // Farbe am Ende
-    ]);
-
-    let option = {
-      title: {
-        text: `${chartKey} Data`,
-      },
-      tooltip: {
-        trigger: "axis",
-        axisPointer: {
-          type: "cross",
-          label: {
-            backgroundColor: "#6a7985",
-          },
-        },
-      },
-      xAxis: {
-        type: "category",
-        boundaryGap: false,
-        data: data.map((item) => item.name),
-      },
-      yAxis: {
-        type: "value",
-      },
-      series: [
-        {
-          smooth: true, // Glättet die Linie
-          lineStyle: {
-            width: 2,
-            color: "#42A5F5", // Blaue Farbe für die Linie
-          },
-          name: chartKey,
-          data: data.map((item) => item.value),
-          type: "line",
-          areaStyle: { normal: { color: gradientColor } },
-          emphasis: {
-            focus: "series",
-          },
-        },
-      ],
-    };
-
-    chartInstances[chartKey].setOption(option);
-  }
   //   -----------------Ende Daten logik--------------
 
   //   -----------------Gesundheit logik----------------------
@@ -152,6 +49,9 @@
   let bildstring = "";
   let showimage = false;
 
+  let aiResponse = null;
+  let pollingInterval = null;
+
   async function fetchLatestImage() {
     try {
       const response = await axios.get("http://localhost:3000/api/getpicture");
@@ -160,14 +60,34 @@
       showimage = true;
       // const base64_image = Buffer.from().toString("base64");
       // updateImage(response.data); // Verwenden der updateImage Funktion
+      startPolling();
     } catch (error) {
       console.error("Fehler beim Abrufen des Bildes:", error);
     }
   }
 
+  function startPolling() {
+    pollingInterval = setInterval(async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/getGPTresponse");
+        if (response.status === 200 && response.data) {
+          aiResponse = response.data.aiResponse;
+          clearInterval(pollingInterval); // Polling stoppen, wenn Antwort erhalten
+        }
+      } catch (error) {
+        console.error("Fehler beim Polling der KI-Antwort:", error);
+      }
+    }, 5000); // Alle 5 Sekunden abfragen
+  }
+  onDestroy(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+  });
+
   // -----------------Ende Gallerie logik----------------
   function run() {
-    fetchDeviceData();
+    // fetchDeviceData();
   }
   run();
 </script>
@@ -178,34 +98,6 @@
     class={activeTab === "Daten" ? "tab active" : "tab"}
     on:click={() => {
       activeTab = "Daten";
-      // initializeCharts();
-      // if (!chartInstances["Humidity"]) {
-      chartInstances["Humidity"].resize(
-        document.getElementById("humidity-chart")
-      );
-      // }
-      // if (!chartInstances["LDR"]) {
-      chartInstances["LDR"].resize(document.getElementById("ldr-chart"));
-      // }
-      // if (!chartInstances["SoilMoisture"]) {
-      chartInstances["SoilMoisture"].resize(
-        document.getElementById("soilmoisture-chart")
-      );
-      // }
-      // if (!chartInstances["Temperature"]) {
-      chartInstances["Temperature"].resize(
-        document.getElementById("temperature-chart")
-      );
-      // }
-      //   setTimeout(() => {
-      //   // Rufen Sie resize für jede Chart-Instanz auf
-      //   Object.values(chartInstances).forEach(chartInstance => {
-      //     if (chartInstance) {
-      //       console.log(chartInstance);
-      //       chartInstance.resize(document.getElementById("humidity-chart"));
-      //     }
-      //   });
-      // }, 0);
     }}
   >
     Daten
@@ -229,26 +121,28 @@
 <button
   id="settingsbtn"
   on:click={() => {
-    window.location.href = `#/DeviceSettings?deviceId=${deviceId}`;
+    push(`/DeviceSettings?deviceId=${deviceId}`)
   }}
 >
   <Settings></Settings>
 </button>
 {#if activeTab === "Daten"}
-  <div id="chartcontainer">
-    <div class="chart" id="humidity-chart"></div>
-    <div class="chart" id="ldr-chart"></div>
-    <div class="chart" id="soilmoisture-chart"></div>
-    <div class="chart" id="temperature-chart"></div>
-  </div>
+  <Daten></Daten>
+
   <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
-  <button on:click={fetchLatestImage}></button>
-  {#if showimage}
-    <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
-  {:else}
-    <p>Bild wird geladen...</p>
+<button on:click={fetchLatestImage}>Bild abrufen</button>
+{#if showimage}
+  <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
+  {#if aiResponse}
+    <div>
+      <h2>KI-Antwort:</h2>
+      <p>{aiResponse}</p>
+    </div>
   {/if}
+{:else}
+  <p>Bild wird geladen...</p>
+{/if}
   <!-- Ihr Inhalt für Gesundheit -->
   <div class="health-tab">
     <div class="status-message">
@@ -292,36 +186,29 @@
 <!-- <DeviceSettings></DeviceSettings> -->
 
 <style>
-  #chartcontainer {
-    height: auto;
-    margin-top: 50px;
-    padding-bottom: 80px;
-  }
   #settingsbtn {
     position: fixed;
     z-index: 200;
     right: 2%;
-    top: 1.5%;
+    top: 1.4rem;
     background-color: transparent;
   }
-  .active {
+  .tabs {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #9a9a9a;
+    justify-content: space-around;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 18px;
   }
   .tabs {
-    width: 70%;
+    width:70%;
     margin-left: auto;
     margin-right: auto;
     min-height: 50px;
     margin-top: 100px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3,1fr);
     padding: 1px;
-    background: #161616;
-    border-radius: 100px;
     overflow: hidden;
   }
   .tab {
@@ -331,14 +218,7 @@
     justify-content: center;
     align-items: center;
   }
-  .chart {
-    padding: 0;
-    margin-top: 10px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 90vw;
-    height: 300px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
+  .active {
+    border-bottom: 2px solid greenyellow;
   }
 </style>

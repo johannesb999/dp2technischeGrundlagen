@@ -1,5 +1,6 @@
 <script>
   import axios from "axios";
+  import { push } from "svelte-spa-router";
   import { UserPlus, Pencil } from "lucide-svelte";
   import {loggedIn, token} from './svelte-store';
 
@@ -44,7 +45,8 @@
       console.log(username);
       loggedIn.update(prev => true);
       checkToken();
-      window.location.href = '#/Home'
+      // window.location.href = '#/Home'
+      push('/Home');
     } catch (error) {
       console.error("Fehler beim Login:", error);
     }
@@ -98,7 +100,7 @@
       email = response.data.data.email;
       emailChache = email;
       console.log(username);
-      const answer = await axios.post("http://localhost:3001/get-devices");
+      const answer = await axios.post("http://localhost:3000/get-devices");
       devicecount = answer.data.length;
     } catch (error) {
       console.error("Kein Token vorhanden oder ungültig", error);
