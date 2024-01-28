@@ -22,6 +22,13 @@ unsigned long startTime;
 const char* ApSsid = AP_SSID;
 const char* ApPassword = AP_PASSWORD;
 
+bool shouldRestart = false; // Neue globale Variable
+
+void saveConfigCallback () {
+  Serial.println("Sollte neu starten, da neue Konfiguration gespeichert wurde.");
+  shouldRestart = true;
+}
+
 // Definieren Sie den WebSocket-Server auf Port 81
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -66,6 +73,7 @@ void setup() {
   WiFiManager wifiManager;
   // wifiManager.resetSettings();
   wifiManager.setConfigPortalTimeout(300);
+   wifiManager.setSaveConfigCallback(saveConfigCallback);
   // Verbinden oder Start eines eigenen Access Points falls nicht konfiguriert
   if (!wifiManager.autoConnect("Esp32Plantmonit")) {
     Serial.println("Fehler beim Verbinden und Timeout erreicht");
@@ -124,6 +132,12 @@ void loop() {
     }
   } else {
     lastWiFiCheck = millis();  // Aktualisiere die letzte erfolgreiche WLAN-Check-Zeit
+  }
+
+  if (shouldRestart) {
+    Serial.println("Neustart wegen neuer WiFi-Einstellungen...");
+    delay(1000);
+    ESP.restart();
   }
   // WebSocket-Server pflegen
   if (millis() - startTime < 300000) {  // 300000 Millisekunden = 5 Minuten
