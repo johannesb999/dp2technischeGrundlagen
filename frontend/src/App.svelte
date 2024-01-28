@@ -83,7 +83,7 @@
   #header {
     display: flex;
     position: fixed;
-    z-index: 100;
+    z-index: 100000000000;
     justify-content: space-between;
     align-items: center;
     width: 100%;

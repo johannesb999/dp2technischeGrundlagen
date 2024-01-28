@@ -2,18 +2,21 @@
   import axios from "axios";
   import Device from "./lib/Device.svelte";
   import {Plus} from 'lucide-svelte';
+  import {ListChecks} from 'lucide-svelte';
   import {currentRoute, loggedIn} from './svelte-store';
   import { push } from "svelte-spa-router";
+  import Devicemin from "./lib/Devicemin.svelte";
 
   let devices = [];
   let autherdevices = [];
   let innerdevices = [];
   let activeTab = "Alle";
+  let min = false;
 
   async function getDevices() {
     console.log("tester")
     try {
-      const response = await axios.post("http://localhost:3001/get-devices");
+      const response = await axios.post("http://localhost:3000/get-devices");
       // console.log(response);
       devices = response.data;
       console.log(devices);
@@ -26,9 +29,6 @@
       loggedIn.update(prev => false);
       currentRoute.set('/Login');
     }
-  }
-
-  function connectDevice() {
   }
 
   function run() {
@@ -61,16 +61,20 @@
 
 <!-- Felder zur Geräteverbindung -->
 
-
+<button id='toggle' on:click={() =>{min = !min}}><ListChecks /></button>
 {#if activeTab === "Alle"}
 <main class='kjhgfd'>
   {#each devices as device}
-    <Device {device}/> 
+    {#if !min}
+      <Device {device}/>
+    {:else}
+      <Devicemin {device}></Devicemin>
+    {/if}
   {/each}
   <!-- Feld zur Abfrage von Gerätedaten -->
-  <button id='newDevice' on:click={connectDevice}>
+  <!-- <button id='newDevice' on:click={connectDevice}>
     <Plus size='40'></Plus>
-  </button>
+  </button> -->
 </main>
 
   {:else if activeTab === "Innen"}
@@ -79,9 +83,9 @@
     <Device {device}/> 
   {/each}
   <!-- Feld zur Abfrage von Gerätedaten -->
-  <button id='newDevice' on:click={connectDevice}>
+  <!-- <button id='newDevice' on:click={connectDevice}>
     <Plus size='40'></Plus>
-  </button>
+  </button> -->
 </main>
 
   {:else if activeTab === "Außen"}
@@ -90,14 +94,22 @@
       <Device {device}/> 
     {/each}
     <!-- Feld zur Abfrage von Gerätedaten -->
-    <button id='newDevice' on:click={()=> {push('/Connect')}}>
-      <Plus size='40'></Plus>
-    </button>
   </main>
   
   {/if}
+  <button id='newDevice' on:click={()=> {push('/Connect')}}>
+    <Plus size='40'></Plus>
+  </button>
   
 <style>
+  #toggle{
+    display: flex;
+    width: fit-content;
+    height: fit-content;
+    position: absolute;
+    right: 5px;
+    top: 92px;
+  }
 
   .tabs {
     display: flex;

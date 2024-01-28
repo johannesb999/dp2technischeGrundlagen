@@ -2,6 +2,7 @@
   //   --------------Seitenweite Importe und Variablen--------------
   import axios from "axios";
   import {push} from "svelte-spa-router";
+  import { onMount, onDestroy } from 'svelte';
   import { Settings } from "lucide-svelte";
   import DeviceSettings from "./DeviceSettings.svelte";
   import Daten from "./lib/Daten.svelte";
@@ -48,6 +49,9 @@
   let bildstring = "";
   let showimage = false;
 
+  let aiResponse = null;
+  let pollingInterval = null;
+
   async function fetchLatestImage() {
     try {
       const response = await axios.get("http://localhost:3000/api/getpicture");
@@ -56,10 +60,30 @@
       showimage = true;
       // const base64_image = Buffer.from().toString("base64");
       // updateImage(response.data); // Verwenden der updateImage Funktion
+      startPolling();
     } catch (error) {
       console.error("Fehler beim Abrufen des Bildes:", error);
     }
   }
+
+  function startPolling() {
+    pollingInterval = setInterval(async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/getGPTresponse");
+        if (response.status === 200 && response.data) {
+          aiResponse = response.data.aiResponse;
+          clearInterval(pollingInterval); // Polling stoppen, wenn Antwort erhalten
+        }
+      } catch (error) {
+        console.error("Fehler beim Polling der KI-Antwort:", error);
+      }
+    }, 5000); // Alle 5 Sekunden abfragen
+  }
+  onDestroy(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+  });
 
   // -----------------Ende Gallerie logik----------------
   function run() {
@@ -107,12 +131,18 @@
 
   <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
-  <button on:click={fetchLatestImage}></button>
-  {#if showimage}
-    <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
-  {:else}
-    <p>Bild wird geladen...</p>
+<button on:click={fetchLatestImage}>Bild abrufen</button>
+{#if showimage}
+  <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
+  {#if aiResponse}
+    <div>
+      <h2>KI-Antwort:</h2>
+      <p>{aiResponse}</p>
+    </div>
   {/if}
+{:else}
+  <p>Bild wird geladen...</p>
+{/if}
   <!-- Ihr Inhalt für Gesundheit -->
   <div class="health-tab">
     <div class="status-message">

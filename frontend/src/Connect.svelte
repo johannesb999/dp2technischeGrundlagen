@@ -46,7 +46,7 @@
         const connectDevice = {DeviceName, Location};
 
         try {
-            const response = await axios.post('http://localhost:3001/initialize-device', {
+            const response = await axios.post('http://localhost:3000/initialize-device', {
                 uniqueDeviceID,
                 ...connectDevice
             });

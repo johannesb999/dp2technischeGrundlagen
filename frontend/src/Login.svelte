@@ -100,7 +100,7 @@
       email = response.data.data.email;
       emailChache = email;
       console.log(username);
-      const answer = await axios.post("http://localhost:3001/get-devices");
+      const answer = await axios.post("http://localhost:3000/get-devices");
       devicecount = answer.data.length;
     } catch (error) {
       console.error("Kein Token vorhanden oder ungültig", error);

@@ -41,7 +41,7 @@
   async function fetchDeviceData() {
     try {
       console.log("fetching data");
-      const response = await axios.post("http://localhost:3001/device-data", {
+      const response = await axios.post("http://localhost:3000/device-data", {
         deviceId,
       });
       if (response.data) {

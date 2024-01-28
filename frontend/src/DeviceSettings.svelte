@@ -27,7 +27,7 @@
 
     async function getDevice() {
         try {
-            const response = await axios.post('http://localhost:3001/device-setting', { deviceId });
+            const response = await axios.post('http://localhost:3000/device-setting', { deviceId });
             console.log(response);
             originalDeviceName = response.data.DeviceName;
             radioValue = response.data.location;
@@ -68,8 +68,8 @@
 
     try {
         console.log(updatedDevice);
-        return;
-        const response = await axios.post('http://localhost:3001/update-device', {
+        // return;
+        const response = await axios.post('http://localhost:3000/update-device', {
             deviceId,
             ...updatedDevice
         });

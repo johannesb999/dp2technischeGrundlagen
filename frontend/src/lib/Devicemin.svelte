@@ -17,7 +17,6 @@
 
         async function fetchData() {
         try {
-            console.log(device._id);
             const measurementsResponse = await axios.post("http://localhost:3000/device-data", {
                 deviceId: device._id,
             });
@@ -78,16 +77,16 @@
 
 <button  on:click={linkPage} >
     <img src='ZebraPflanze.png' alt='Pflanze'>
-    <div>
-        <span id='status'>{alarmLevel}</span>
+    <!-- <div>
         <div id='buddy' ></div>
-    </div>
+    </div> -->
     <div id="data-div">
-            <span>{device.DeviceName}</span>
-            <div id='text-div'>
-                {#each orderedKeys as schluessel}
-                <p>{formatValue(latestValues[schluessel])}</p>
-                {/each}
+        <span>{device.DeviceName}</span>
+        <div id='text-div'>
+            <span id='status'>{alarmLevel}</span>
+            <!-- {#each orderedKeys as schluessel}
+            <p>{formatValue(latestValues[schluessel])}</p> -->
+                <!-- {/each} -->
             </div>
     </div>
 </button>
@@ -101,14 +100,12 @@
         background-color: rgb(68, 116, 58);
         border-radius: 10px;
         width: 100%;
-        height: 130px;
+        height: 70px;
         padding: 0;
         margin-bottom: 2rem;
-        position: relative;
         border-radius: 10px;
-    }
-    p {
-        margin: 0;
+        display: flex;
+        align-items: center;
     }
     #text-div{
         display: flex;
@@ -117,7 +114,7 @@
         width:100%;
     }
     #status {
-        position: absolute;
+        /* position: absolute; */
         z-index: 1023;
         top: -1px;
         padding: 4px;
@@ -125,32 +122,34 @@
         left: 0;
         border-top-left-radius: 10px;
         background-color: rgb(68, 116, 58);
+        font-size: 22px;
     }
     #data-div {
-        padding-left: 5px;
-        padding-right: 5px;
-        background-color: rgb(68, 116, 58);
+        padding-left: 15px;
+        /*padding-right: 5px; */
+        /* background-color: rgb(68, 116, 58); */
         color: rgb(0, 0, 0);
-        z-index: 123344;
-        /* border: 2px solid green; */
-        border-bottom-left-radius: 10px;
-        border-bottom-right-radius: 10px;
+        /* z-index: 123344; */
+        /* border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px; */
         display: flex;
-        gap: 15px;
-        height: fit-content;
+        /* gap: 15px; */
+        justify-content: space-between;
+        width: 100%;
+        /* height: fit-content; */
         align-items: center;
-        padding-bottom: 4px ;
-        right: 0;
+        /* padding-bottom: 4px ; */
+        /* right: 0; */
     }
     #data-div span{
-        font-size: 15px;
+        font-size: 18px;
         margin-right: 20px;
     }
     img {
-        width: 100%;
+        width: 20%;
         object-fit: cover;
-        height: 80%;
-        border-top-right-radius: 10px;
+        height: 100%;
         border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
     }
 </style> 
