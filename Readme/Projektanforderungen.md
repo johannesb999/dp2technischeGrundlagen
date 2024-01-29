@@ -87,8 +87,8 @@ Von der 4,0 zur 1,0 dann relevant:
 - Abgabeumfang:
 
 ```diff
-    - GitHub Monorepo (Abgabe des Links)
-    - .env Files auf anderem Kanal (Slack / Mail / Drive)
-    - einige Fotos und Screenshots des Projekts zu Dokumentations- und Ausstellungszwecken
-    - Screencast, der alle Features zeigt (in Google Drive, nicht im Repo!)
+    +- GitHub Monorepo (Abgabe des Links)
+    +- .env Files auf anderem Kanal (Slack / Mail / Drive)
+    +- einige Fotos und Screenshots des Projekts zu Dokumentations- und Ausstellungszwecken
+    +- Screencast, der alle Features zeigt (in Google Drive, nicht im Repo!)
 ```
