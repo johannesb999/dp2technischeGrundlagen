@@ -1,4 +1,19 @@
 # Pflanzenüberwachungssystem mit ESP32, ESP32-CAM, SensorService und UserService
+## Inhalt
+- [Über das Projekt](#über-das-projekt)
+- [Teammitglieder](#teammitglieder)
+- [Technologien](#technologien)
+- [Funktionsweise](#funktionsweise)
+  - [ESP32 Modul](#esp32-modul)
+  - [ESP32-CAM Modul](#esp32-cam-modul)
+  - [SensorService (Middleware)](#sensorservice-middleware)
+  - [UserService](#userservice)
+  - [Frontend (Svelte)](#frontend-svelte)
+- [Installation und Einrichtung](#installation-und-einrichtung)
+- [Nutzung](#nutzung)
+- [Lizenz](#lizenz)
+- [Kontakt](#kontakt)
+
 
 ## Über das Projekt
 
@@ -198,5 +213,5 @@ Das System ist flexibel und kann für verschiedene Arten von Pflanzen und Umgebu
 
 Für weitere Anfragen oder Unterstützung kontaktieren Sie bitte:
 
-- Johannes Biess - [johannes.biess@example.com]
-- Jannik Flaig - [jannik.flaig@example.com]
+- Johannes Biess - [johannes.biess@hfg.design]
+- Jannik Flaig - [jannik.flaig@hfg.design]
