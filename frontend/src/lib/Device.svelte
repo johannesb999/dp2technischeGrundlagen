@@ -6,6 +6,8 @@
 
   export let device;
   let alarmLevel;
+  let bildstring;
+  let showcontent = true;
   const threshold = 2700;
 
   console.log("device:", device);
@@ -14,9 +16,27 @@
   let latestValues = {};
   let alarmLevels = {};
 
+  async function fetchLatestImage() {
+    try {
+      const result = await axios.post(
+        "http://localhost:3000/get-mac-by-deviceID",
+        { device: device._id }
+      );
+      console.log("hoffentlich mac:", result.data);
+      const response = await axios.post(
+        "http://localhost:3000/api/getpicture",
+        { device: result.data }
+      );
+      bildstring = response.data[0].data;
+      showcontent = true;
+    } catch (error) {
+      console.error("Fehler beim Abrufen des Bildes:", error);
+    }
+  }
+
   async function fetchData() {
     try {
-      console.log(device._id);
+      console.log("deviceID:", device._id);
       const measurementsResponse = await axios.post(
         "http://localhost:3000/device-data",
         {
@@ -29,15 +49,15 @@
       for (const [key, values] of Object.entries(measurementsResponse.data)) {
         const latestValue =
           values.length > 0 ? values[values.length - 1] : undefined;
-        console.log(key, latestValue);
+        // console.log(key, latestValue);
         latestValues[key] = latestValue;
 
         // Alarmlevel basierend auf dem Schlüssel bestimmen
         alarmLevels[key] = getAlarmLevel(latestValue, threshold);
       }
 
-      console.log(latestValues);
-      console.log(alarmLevels);
+      // console.log(latestValues);
+      // console.log(alarmLevels);
       return { latestValues, alarmLevels };
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
@@ -60,8 +80,10 @@
   }
 
   async function run() {
-    const hgfdes = await fetchData();
-    console.log(hgfdes);
+    fetchLatestImage();
+    fetchData();
+
+    // console.log(hgfdes);
   }
   run();
   let orderedKeys = ["SoilMoisture", "LDR", "Temperature", "Humidity"];
@@ -73,21 +95,28 @@
   }
 </script>
 
-<button on:click={linkPage}>
-  <img src="ZebraPflanze.png" alt="Pflanze" />
-  <div>
-    <span id="status">{alarmLevel}</span>
-    <div id="buddy"></div>
-  </div>
-  <div id="data-div">
-    <span>{device.DeviceName}</span>
-    <div id="text-div">
-      {#each orderedKeys as schluessel}
-        <p>{formatValue(latestValues[schluessel])}</p>
-      {/each}
+{#if showcontent}
+  <button on:click={linkPage}>
+    <img
+      src={bildstring
+        ? `data:image/jpeg;base64,${bildstring}`
+        : "ZebraPflanze.png"}
+      alt="Pflanze"
+    />
+    <div>
+      <span id="status">{alarmLevel}</span>
+      <div id="buddy"></div>
     </div>
-  </div>
-</button>
+    <div id="data-div">
+      <span>{device.DeviceName}</span>
+      <div id="text-div">
+        {#each orderedKeys as schluessel}
+          <p>{formatValue(latestValues[schluessel])}</p>
+        {/each}
+      </div>
+    </div>
+  </button>
+{/if}
 
 <style>
   button {

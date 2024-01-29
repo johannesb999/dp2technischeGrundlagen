@@ -85,16 +85,24 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
   }
 });
 
-app.get("/api/getpicture", async (req, res) => {
+app.post("/api/getpicture", async (req, res) => {
   try {
     await mongoClient.connect();
     const database = mongoClient.db("test");
     const images = database.collection("images");
     console.log("Bild wird angefragt");
 
-    const latestImage = await images.findOne({}, { sort: { timestamp: -1 } });
+    const device = req.body.device;
+    console.log("cxgfds:", device);
+
+    const deviceImages = await images
+      .find({ device: device })
+      .sort({ timestamp: -1 })
+      .toArray();
+
+    console.log(deviceImages);
     res.set("Content-Type", "image/jpeg");
-    res.status(200).send(latestImage);
+    res.status(200).send(deviceImages);
   } catch (err) {
     res.status(500).send({ error: "Fehler beim Abrufen des Bildes" });
   }
@@ -246,7 +254,7 @@ mqttClient.on("message", async (topic, message) => {
         Value: data.Value,
       });
       await measurement.save();
-      console.log(`Daten gespeichert: ${message.toString()}`);
+      // console.log(`Daten gespeichert: ${message.toString()}`);
     } else {
       console.log("Einer der Werte ist null, Datensatz wird ignoriert.");
     }
@@ -263,9 +271,11 @@ function validateToken(req, res, next) {
   if (!token) {
     return res.status(401).send("Kein Token vorhanden");
   }
-
+  console.log(JWT_SECRET);
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
+      console.log("kein ungültig");
+
       return res.status(403).send("Token ist ungültig");
     }
     console.log("User in validation:", user);
@@ -310,12 +320,38 @@ async function getMeasurementsByDeviceId(deviceId) {
     .toArray(); // Konvertieren des Cursors in ein Array
 }
 
+async function getmac(deviceId) {
+  try {
+    await mongoClient.connect();
+    const collection = mongoClient.db("test").collection("devices");
+
+    // Der Filter sucht nach einem Dokument mit der angegebenen _id
+    const device = await collection.findOne({ _id: new ObjectId(deviceId) });
+
+    if (!device) {
+      throw new Error("Gerät nicht gefunden");
+    }
+
+    return device.UniqueDeviceID;
+  } catch (error) {
+    console.error("Fehler beim Abrufen der UniqueDeviceID:", error);
+    throw error;
+  }
+}
+
 //----Endpunkt um die Geräte des Nutzers auf dem Homescreen anzuzeigen----
 app.post("/get-devices", validateToken, async (req, res) => {
   const userDevices = await getDevice("userID", req.user.userID);
   console.log(userDevices);
   console.log(req.user.userID);
   res.status(200).json(userDevices);
+});
+
+app.post("/get-mac-by-deviceID", validateToken, async (req, res) => {
+  // console.log(req.body.device);
+  const result = await getmac(req.body.device);
+  console.log(result);
+  res.status(200).json(result);
 });
 
 //----Endpunkt um Gerät für die Einstellungen zu finden----

@@ -67,14 +67,15 @@ Die Abgabe des Projekts erfolgt in den beiden Fächern Technische Grundlagen 2 u
 - eigener Code über Unterrichtsprojekt hinaus?
 → bestanden
 
+```diff
 Von der 4,0 zur 1,0 dann relevant:
-- Komplexität des Projekts
-- Innovationsgrad des Projekts
-- Herangehensweise, Umgang mit Schwierigkeiten im Verlauf
-- the more, the better (Anzahl sinnvoller Features)
-- the better, the better (Codequalität, Struktur von System und Code)
++- Komplexität des Projekts
++- Innovationsgrad des Projekts
++- Herangehensweise, Umgang mit Schwierigkeiten im Verlauf
++- the more, the better (Anzahl sinnvoller Features)
++- the better, the better (Codequalität, Struktur von System und Code)
 - the smarter, the better (Konzept, Komplexität)
-
+```
 **Hinweis:** Anwesenheit, Mitarbeit und Beiträge im Kurs (Quantität und Qualität) sind mit 30% der Gesamtnote gewichtet.
 
 **Tipp:** Macht irgendwo eine übersichtliche Dokumentationsseite, in der ihr eure Must / Should / Could Haves auflistet, damit ich nichts übersehe.

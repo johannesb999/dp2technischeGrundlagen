@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.JWT_SECRET || "Johannes-ist-der-Beste";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URI}`;
 const mongoClient = new MongoClient(uri, {
@@ -30,27 +30,27 @@ async function connectToDevices() {
 }
 // Geräteverbindung abrufen
 
-
 async function getUserData(userID) {
   await mongoClient.connect();
   console.log(userID);
-  return mongoClient.db("test").collection("users").findOne( new ObjectId(userID));
+  return mongoClient
+    .db("test")
+    .collection("users")
+    .findOne(new ObjectId(userID));
 }
-
-
 
 function validateToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = authHeader && authHeader.split(" ")[1];
   console.log(token);
 
   if (!token) {
-    return res.status(401).send('Kein Token vorhanden');
+    return res.status(401).send("Kein Token vorhanden");
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).send('Token ist ungültig');
+      return res.status(403).send("Token ist ungültig");
     }
     console.log("User in validation:", user);
     req.user = user;
@@ -90,20 +90,18 @@ app.post("/connect-device", validateToken, async (req, res) => {
   }
 });
 
-
 //----Endpunkt zum überprüfen ob der Nutzer schon eingelogt ist----
-app.post('/get-token', validateToken, async (req,res) => {
+app.post("/get-token", validateToken, async (req, res) => {
   let bool = false;
   try {
     const userData = await getUserData(req.user.userID);
-    console.log("UserData:",userData);
+    console.log("UserData:", userData);
     bool = true;
-    res.status(200).json({ bool: bool, data: userData});
-  } catch{
+    res.status(200).json({ bool: bool, data: userData });
+  } catch {
     res.status(500).send("Kein Token vorhanden");
   }
-})
-
+});
 
 //----Endpunkt für die Registrierung----
 app.post("/register", async (req, res) => {
@@ -142,7 +140,7 @@ app.post("/login", async (req, res) => {
   const user = await users.findOne({ email: userData.email });
   console.log("Selected user:", user);
   console.log(user.deleted);
-  if(user.deleted) {
+  if (user.deleted) {
     return res.status(403).send("Dieser Nutzer wurde gelöscht");
   }
   const username = user.username;
@@ -155,7 +153,7 @@ app.post("/login", async (req, res) => {
     return res.status(401).send("Passwort ist falsch");
   }
 
-  console.log(user._id)
+  console.log(user._id);
 
   const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1h",
@@ -171,7 +169,7 @@ app.post("/logout", validateToken, (req, res) => {
   res.status(200).send("Erfolgreich abgemeldet");
 });
 
-app.post("/delete-user", validateToken, async (req, res) =>{
+app.post("/delete-user", validateToken, async (req, res) => {
   const users = await connectToDatabase();
   const updateResult = await users.updateOne(
     { _id: new ObjectId(req.user.userID) },
@@ -184,7 +182,7 @@ app.post("/delete-user", validateToken, async (req, res) =>{
     console.log("Nutzer nicht gefunden oder bereits als gelöscht markiert");
     res.send("Nutzer nicht gefunden oder bereits als gelöscht markiert");
   }
-})
+});
 
 app.post("/restore-user", async (req, res) => {
   const { email } = req.body;
@@ -203,24 +201,32 @@ app.post("/restore-user", async (req, res) => {
 });
 
 //----Endpunkt zum updaten des Nutzerprofils----
-app.post('/update-user', validateToken, async (req, res) => {
+app.post("/update-user", validateToken, async (req, res) => {
   const searchemail = req.body.emailChache;
   const email = req.body.email;
   const username = req.body.username;
   console.log(searchemail);
 
   try {
-      const result = await mongoClient.db("test").collection("users").updateOne(
-          { email: searchemail },
-          { $set: { username: username, email: email } }
+    const result = await mongoClient
+      .db("test")
+      .collection("users")
+      .updateOne(
+        { email: searchemail },
+        { $set: { username: username, email: email } }
       );
-      if (result.modifiedCount === 0) {
-          return res.status(404).send('Gerät wurde nicht gefunden oder Daten sind unverändert');
-      }
-      res.status(200).send('Gerät erfolgreich aktualisiert');
+    if (result.modifiedCount === 0) {
+      return res
+        .status(404)
+        .send("Gerät wurde nicht gefunden oder Daten sind unverändert");
+    }
+    res.status(200).send("Gerät erfolgreich aktualisiert");
   } catch (error) {
-      console.error("Fehler beim Aktualisieren des Geräts in der Datenbank", error);
-      res.status(500).send('Interner Serverfehler');
+    console.error(
+      "Fehler beim Aktualisieren des Geräts in der Datenbank",
+      error
+    );
+    res.status(500).send("Interner Serverfehler");
   }
 });
 

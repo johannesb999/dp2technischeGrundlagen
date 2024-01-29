@@ -1,8 +1,8 @@
 <script>
   //   --------------Seitenweite Importe und Variablen--------------
   import axios from "axios";
-  import {push} from "svelte-spa-router";
-  import { onMount, onDestroy } from 'svelte';
+  import { push } from "svelte-spa-router";
+  import { onMount, onDestroy } from "svelte";
   import { Settings } from "lucide-svelte";
   import DeviceSettings from "./DeviceSettings.svelte";
   import Daten from "./lib/Daten.svelte";
@@ -51,12 +51,22 @@
 
   let aiResponse = null;
   let pollingInterval = null;
+  let bildarray = [];
 
   async function fetchLatestImage() {
     try {
-      const response = await axios.get("http://localhost:3000/api/getpicture");
+      const result = await axios.post(
+        "http://localhost:3000/get-mac-by-deviceID",
+        { device: deviceId }
+      );
+      console.log("hoffentlich mac:", result.data);
+      const response = await axios.post(
+        "http://localhost:3000/api/getpicture",
+        { device: result.data }
+      );
       console.log(response);
-      bildstring = response.data;
+      bildarray = response.data;
+      bildstring = response.data[0].data;
       showimage = true;
       // const base64_image = Buffer.from().toString("base64");
       // updateImage(response.data); // Verwenden der updateImage Funktion
@@ -69,7 +79,9 @@
   function startPolling() {
     pollingInterval = setInterval(async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/getGPTresponse");
+        const response = await axios.get(
+          "http://localhost:3000/api/getGPTresponse"
+        );
         if (response.status === 200 && response.data) {
           aiResponse = response.data.aiResponse;
           clearInterval(pollingInterval); // Polling stoppen, wenn Antwort erhalten
@@ -87,7 +99,7 @@
 
   // -----------------Ende Gallerie logik----------------
   function run() {
-    // fetchDeviceData();
+    fetchLatestImage();
   }
   run();
 </script>
@@ -121,7 +133,7 @@
 <button
   id="settingsbtn"
   on:click={() => {
-    push(`/DeviceSettings?deviceId=${deviceId}`)
+    push(`/DeviceSettings?deviceId=${deviceId}`);
   }}
 >
   <Settings></Settings>
@@ -131,18 +143,18 @@
 
   <!-- Inhalt für Gesundheit -->
 {:else if activeTab === "Gesundheit"}
-<button on:click={fetchLatestImage}>Bild abrufen</button>
-{#if showimage}
-  <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
-  {#if aiResponse}
-    <div>
-      <h2>KI-Antwort:</h2>
-      <p>{aiResponse}</p>
-    </div>
+  <!-- <button on:click={fetchLatestImage}>Bild abrufen</button> -->
+  {#if showimage}
+    <img src={`data:image/jpeg;base64,${bildstring}`} alt="Bild aus der API" />
+    {#if aiResponse}
+      <div>
+        <h2>KI-Antwort:</h2>
+        <p>{aiResponse}</p>
+      </div>
+    {/if}
+  {:else}
+    <p>Bild wird geladen...</p>
   {/if}
-{:else}
-  <p>Bild wird geladen...</p>
-{/if}
   <!-- Ihr Inhalt für Gesundheit -->
   <div class="health-tab">
     <div class="status-message">
@@ -169,23 +181,37 @@
     </div>
     <!-- Hier weiteere Inhalte -->
   </div>
-  <div><h1>Test</h1></div>
   <!-- Inhalt für Gallerie -->
 {:else if activeTab === "Gallerie"}
   <!-- Ihr Inhalt für Gallerie -->
-  {#if base64Image}
-    <img
-      src={`data:image/jpeg;base64,${base64Image}`}
-      alt="Aktuelles Bild aus der API"
-    />
-  {:else}
+  <!-- {#if base64Image} -->
+  <div class="gallery-grid">
+    {#each bildarray as bild}
+      <img
+        src={`data:image/jpeg;base64,${bild.data}`}
+        alt="Bild aus der Galerie"
+      />
+    {/each}
+  </div>
+  <!-- {:else}
     <p>Bild wird geladen...</p>
-  {/if}
+  {/if} -->
 {/if}
 
 <!-- <DeviceSettings></DeviceSettings> -->
-
 <style>
+  .gallery-grid {
+    display: grid;
+    margin: 32px;
+    grid-template-columns: repeat(4, 1fr); /* Erzeugt ein 4-Spalten-Grid */
+    grid-gap: 16px; /* Abstand zwischen den Bildern */
+  }
+
+  .gallery-grid img {
+    width: 100%; /* Sorgt dafür, dass die Bilder die Zelle ausfüllen */
+    border-radius: 8px; /* Optional: Für abgerundete Ecken */
+  }
+
   #settingsbtn {
     position: fixed;
     z-index: 200;
@@ -201,13 +227,13 @@
     font-size: 18px;
   }
   .tabs {
-    width:70%;
+    width: 70%;
     margin-left: auto;
     margin-right: auto;
     min-height: 50px;
     margin-top: 100px;
     display: grid;
-    grid-template-columns: repeat(3,1fr);
+    grid-template-columns: repeat(3, 1fr);
     padding: 1px;
     overflow: hidden;
   }
