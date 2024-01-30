@@ -93,14 +93,14 @@ app.post("/api/getpicture", async (req, res) => {
     console.log("Bild wird angefragt");
 
     const device = req.body.device;
-    console.log("cxgfds:", device);
+    console.log("deviceID:", device);
 
     const deviceImages = await images
       .find({ device: device })
       .sort({ timestamp: -1 })
       .toArray();
 
-    console.log(deviceImages);
+    // console.log(deviceImages);
     res.set("Content-Type", "image/jpeg");
     res.status(200).send(deviceImages);
   } catch (err) {
@@ -108,15 +108,23 @@ app.post("/api/getpicture", async (req, res) => {
   }
 });
 
-app.get("api/getGPTresponse", async (req, res) => {
-  main(latestImage);
+app.post("/api/getGPTresponse", async (req, res) => {
+  try {
+    const image = req.body.image;
+    // res.status(200).send(main(latestImage));
+    const result = await main(image);
+    console.log("result:", result);
+    res.status(200).send(result);
+    // res.status(200).send("working");
+  } catch (error) {
+    res.status(400).send("Keine Daten empfangen.");
+  }
 });
 async function main(image) {
   const prompt = `
-  Analyze the following image and return the information in JSON format.
-  Image: [Insert Base64-encoded image here]
-
-  Expected response format:
+  Analyze the following image response with a json. Do not provide any additional information.
+  If you have any trouble in reading the image, use give back the example json with empty.
+  The answer should be formated like this: 
   {
     "Plant": "Name of the plant",
     "Pests": "Name of the pests, if any",
@@ -127,56 +135,7 @@ async function main(image) {
     "Recommendation": "Brief description of recommended measures to ensure plants future health"
   }
   `;
-
-  const schema = {
-    type: "object",
-    properties: {
-      plant: {
-        type: "string",
-        description: "Name der Pflanze",
-      },
-      pests: {
-        type: "string",
-        description:
-          "Vorhandensein von Schädlingen an der Pflanze, Antwort als 'ja' oder 'nein'",
-      },
-      disease: {
-        type: "string",
-        description:
-          "Vorhandensein einer Krankheit, Antwort als 'ja' oder 'nein'",
-      },
-      rot: {
-        type: "string",
-        description: "Vorhandensein von Fäulnis, Antwort als 'ja' oder 'nein'",
-      },
-      kinks: {
-        type: "string",
-        description:
-          "Vorhandensein von Verbiegungen, Antwort als 'ja' oder 'nein'",
-      },
-      cracks: {
-        type: "string",
-        description: "Vorhandensein von Rissen, Antwort als 'ja' oder 'nein'",
-      },
-      suggestion: {
-        type: "string",
-        description: "Dreisatz-Vorschlag zur Behandlung der erkannten Probleme",
-      },
-    },
-    required: [
-      "plant",
-      "pests",
-      "disease",
-      "rot",
-      "kinks",
-      "cracks",
-      "suggestion",
-    ],
-  };
-  //funktion an API/Button im frontend binden, der antwort ans frontend schickt
   if (!image) return;
-  // const base64_image = Buffer.from(image).toString("base64");
-  console.log(image);
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-vision-preview",
@@ -198,9 +157,30 @@ async function main(image) {
       },
     ],
     max_tokens: 300,
+    temperature: 0,
   });
-  console.log(response.choices[0]);
+
+  // Verarbeite die Antwort und versuche, sie zu einem JSON-Objekt zu konvertieren
+  return parseGPTResponse(response.choices[0].message.content);
 }
+
+function parseGPTResponse(responseString) {
+  let cleanedString = responseString.replace(/```json\n|\n```/g, "");
+  try {
+    let jsonResponse = JSON.parse(cleanedString);
+    return jsonResponse;
+  } catch (error) {
+    console.error("Fehler beim Parsen des JSON-Strings: ", error);
+    return null; // oder geeignete Fehlerbehandlung
+  }
+}
+
+// Beispielverwendung:
+const responseString =
+  '{\n  "Plant": "",\n  "Pests": "",\n  "Disease": "",\n  "Decay": "",\n  "Bends": "",\n  "Cracks": "",\n  "Recommendation": ""\n}';
+const jsonResponse = parseGPTResponse(responseString);
+
+console.log(jsonResponse); // Gibt das geparste JSON-Objekt aus
 
 app.get("/api/measurements", async (req, res) => {
   try {
@@ -416,16 +396,22 @@ app.post("/update-device", validateToken, async (req, res) => {
 
 //----Endpunkt zum initialisieren der Geräts----
 app.post("/initialize-device", validateToken, async (req, res) => {
-  const { uniqueDeviceID, DeviceName, Location } = req.body;
+  const { uniqueDeviceID, DeviceName, Location, plantspecies } = req.body;
 
   try {
-    console.log("hes treying");
+    await mongoClient.connect();
     const result = await mongoClient
       .db("test")
       .collection("devices")
       .updateOne(
         { UniqueDeviceID: uniqueDeviceID },
-        { $set: { DeviceName: DeviceName, location: Location } }
+        {
+          $set: {
+            DeviceName: DeviceName,
+            location: Location,
+            plantspecies: plantspecies,
+          },
+        }
       );
     if (result.modifiedCount === 0) {
       return res
@@ -439,6 +425,23 @@ app.post("/initialize-device", validateToken, async (req, res) => {
       error
     );
     res.status(500).send("Interner Serverfehler");
+  }
+});
+
+app.post("/get-ideal-values", validateToken, async (req, res) => {
+  try {
+    const query = {
+      $or: [{ commonName: req.body.plant }, { scientificName: req.body.plant }],
+    };
+    const result = await mongoClient
+      .db("PlantDB")
+      .collection("idealValues")
+      .findOne(query);
+    console.log(result);
+    res.status(200).send(result);
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Daten", error);
+    res.status(500).send("Fehler beim Abrufen der Daten");
   }
 });
 

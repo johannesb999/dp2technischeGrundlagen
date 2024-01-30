@@ -7,8 +7,8 @@
   export let device;
   let alarmLevel;
   let bildstring;
-  let showcontent = true;
-  const threshold = 2700;
+  let showcontent = false;
+  let idealSoilRange;
 
   console.log("device:", device);
 
@@ -34,6 +34,8 @@
     }
   }
 
+  let alarm;
+
   async function fetchData() {
     try {
       console.log("deviceID:", device._id);
@@ -44,6 +46,13 @@
         }
       );
       console.log(measurementsResponse);
+      const idealValues = await axios.post(
+        "http://localhost:3000/get-ideal-values",
+        { plant: device.plantspecies }
+      );
+      console.log(idealValues);
+      idealSoilRange = splitRange(idealValues.data.idealSoil);
+      console.log(idealSoilRange);
 
       // Iterieren über alle Schlüssel in den Daten
       for (const [key, values] of Object.entries(measurementsResponse.data)) {
@@ -53,25 +62,59 @@
         latestValues[key] = latestValue;
 
         // Alarmlevel basierend auf dem Schlüssel bestimmen
-        alarmLevels[key] = getAlarmLevel(latestValue, threshold);
+        if (key === "SoilMoisture") {
+          alarm = getAlarmLevel(latestValue, idealSoilRange);
+        }
       }
 
-      // console.log(latestValues);
-      // console.log(alarmLevels);
-      return { latestValues, alarmLevels };
+      console.log(latestValues);
+      console.log("alarm:", alarm);
+      showcontent = true;
+      return { latestValues };
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
     }
   }
 
-  function getAlarmLevel(soilMoisture, threshold) {
-    const difference = threshold - soilMoisture;
-    if (difference >= 200) {
-      return "dringend gießen";
-    } else if (difference >= 100) {
-      return "bitte gießen";
+  function splitRange(value) {
+    const [min, max] = value.split(" - ").map(Number);
+    return { min, max };
+  }
+
+  function getAlarmLevel(soilMoisture, soirang) {
+    const soilMoistureValue = Number(soilMoisture); // Konvertieren in eine Zahl, falls nötig
+
+    console.log("value:", soilMoistureValue);
+    console.log("range:", soirang);
+    let alarmLevel = "ideal";
+    let alarmType = "none"; // 'none', 'low' für zu niedrig oder 'high' für zu hoch
+
+    // Prüfen, ob der Wert unter dem Idealbereich liegt
+    if (soilMoistureValue < soirang.min) {
+      const difference = soirang.min - soilMoistureValue;
+      alarmType = "low"; // Der Wert ist zu niedrig
+      if (difference > 20) {
+        alarmLevel = "trocken"; // Hoher Alarm
+      } else if (difference > 10) {
+        alarmLevel = "trocken"; // Mittlerer Alarm
+      } else {
+        alarmLevel = "trocken"; // Niedriger Alarm
+      }
     }
-    return "Top Zustand";
+    // Prüfen, ob der Wert über dem Idealbereich liegt
+    else if (soilMoistureValue > soirang.max) {
+      const difference = soilMoistureValue - soirang.max;
+      alarmType = "high"; // Der Wert ist zu hoch
+      if (difference > 20) {
+        alarmLevel = "überwässert"; // Hoher Alarm
+      } else if (difference > 10) {
+        alarmLevel = "überwässert"; // Mittlerer Alarm
+      } else {
+        alarmLevel = "überwässert"; // Niedriger Alarm
+      }
+    }
+    console.log(alarmLevel, alarmType);
+    return { alarmLevel, alarmType };
   }
 
   function linkPage() {
@@ -82,8 +125,6 @@
   async function run() {
     fetchLatestImage();
     fetchData();
-
-    // console.log(hgfdes);
   }
   run();
   let orderedKeys = ["SoilMoisture", "LDR", "Temperature", "Humidity"];
@@ -104,7 +145,7 @@
       alt="Pflanze"
     />
     <div>
-      <span id="status">{alarmLevel}</span>
+      <span id="status">{alarm.alarmLevel}</span>
       <div id="buddy"></div>
     </div>
     <div id="data-div">

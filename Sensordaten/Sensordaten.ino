@@ -24,6 +24,9 @@ const char* ApPassword = AP_PASSWORD;
 
 bool shouldRestart = false; // Neue globale Variable
 
+const int dry = 2850;
+const int wet = 930;
+
 void saveConfigCallback () {
   Serial.println("Sollte neu starten, da neue Konfiguration gespeichert wurde.");
   shouldRestart = true;
@@ -173,7 +176,8 @@ void loop() {
   // Bodenfeuchtigkeitsdaten auslesen und senden
   if (currentTime - lastSoilMoistureReadTime >= SOIL_MOISTURE_READ_INTERVAL) {
     int soilMoistureValue = analogRead(SOIL_MOISTURE_PIN);
-    sendSensorData("SoilMoisture", soilMoistureValue);
+    int humPercent = map (soilMoistureValue, wet, dry, 100, 0);
+    sendSensorData("SoilMoisture", humPercent);
     lastSoilMoistureReadTime = currentTime;
   }
 
