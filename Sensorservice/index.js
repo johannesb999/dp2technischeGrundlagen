@@ -55,6 +55,7 @@ async function savePictrue(imagee, macAdress, res) {
       timestamp: time,
     });
     res.status(200).send("Bild gespiechert");
+    console.log("Bild gespeichert");
   } catch (error) {
     // res.status(500).send("Fehler beim speichern des Bildes");
   } finally {

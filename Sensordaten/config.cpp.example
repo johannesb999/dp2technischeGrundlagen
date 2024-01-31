@@ -1,7 +1,0 @@
-#include "config.h"
-
-const char* ssid = "";
-const char* password = "";
-const char* mqtt_server = "";
-const int mqtt_port = 0000000;
-const char* values_topic = "";

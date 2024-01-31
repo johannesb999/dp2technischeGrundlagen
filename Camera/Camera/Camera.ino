@@ -176,7 +176,7 @@ void loop() {
       return;
     }
 
-    delay(50000);
+    delay(20000);
 
     // HTTP-Client initialisieren
     HTTPClient http;

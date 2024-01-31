@@ -1,0 +1,26 @@
+// config.h
+#ifndef CONFIG_H
+#define CONFIG_H
+
+
+// AP Credentials
+const char* AP_SSID = "Your AP Name";
+const char* AP_PASSWORD = "Set your Password";
+
+// MQTT Broker settings
+const char* mqtt_server = "ServerAdress";
+const int mqtt_port = Port;
+
+// MQTT Topics
+
+const char* values_topic = "DataTopic";
+
+// Intervall
+#define TEMP_READ_INTERVAL 30000
+#define HUMIDITY_READ_INTERVAL 50000
+#define SOIL_MOISTURE_READ_INTERVAL 30000
+#define LIGHT_READ_INTERVAL 20000
+
+
+
+#endif // CONFIG_H
