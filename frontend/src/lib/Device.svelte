@@ -8,6 +8,7 @@
   let alarmLevel;
   let bildstring;
   let showcontent = false;
+  let showcontent2 = false;
   let idealSoilRange;
 
   console.log("device:", device);
@@ -69,6 +70,7 @@
 
       console.log(latestValues);
       console.log("alarm:", alarm);
+      showcontent2 = true;
       return { latestValues };
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
@@ -135,7 +137,7 @@
   }
 </script>
 
-{#if showcontent}
+{#if showcontent && showcontent2}
   <button on:click={linkPage}>
     <img
       src={bildstring ? `data:image/jpeg;base64,${bildstring}` : "Nils.JPG"}
