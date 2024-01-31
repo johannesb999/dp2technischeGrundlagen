@@ -68,8 +68,8 @@
 
 <main>
   {#if !deviceConnected}
-    <h1>Verbinde dein PlantMonit Gerät</h1>
-    <div>
+    <h1>Verbinde dein Gerät</h1>
+    <div id="macadress">
       <label for="deviceID">DeviceID</label>
       <input id="deviceID" type="text" bind:value={uniqueDeviceID} />
     </div>
@@ -79,40 +79,36 @@
       disabled={button(uniqueDeviceID)}>Verbinden</button
     >
   {:else}
-    <div>
-      <h1>Richte dein Gerät ein</h1>
-      <form on:submit|preventDefault={initialize}>
-        <div id="testbox">
-          <label for="DeviceName" style="font-size:22px;">Gerätename:</label>
-          <input
-            placeholder={"Gerätename"}
-            id="DeviceName"
-            type="text"
-            bind:value={DeviceName}
-          />
-        </div>
-        <div id="testbox">
-          <label for="species" style="font-size:22px;">Pflanzenart:</label>
-          <input
-            placeholder={"Pflanzenart"}
-            id="DeviceName"
-            type="text"
-            bind:value={plantspecies}
-          />
-        </div>
-        <div class="box">
-          <Radio
-            {options}
-            fontSize={22}
-            legend="Gerätestandort:"
-            bind:userSelected={radioValue}
-          />
-        </div>
-        <button id="submitbtn" disabled={!sxdcfvgbhnjmk} type="submit"
-          >Ok</button
-        >
-      </form>
-    </div>
+    <h1>Richte dein Gerät ein</h1>
+    <form on:submit|preventDefault={initialize}>
+      <div id="testbox">
+        <label for="DeviceName" style="font-size:22px;">Gerätename:</label>
+        <input
+          placeholder={"Gerätename"}
+          id="DeviceName"
+          type="text"
+          bind:value={DeviceName}
+        />
+      </div>
+      <div id="testbox">
+        <label for="species" style="font-size:22px;">Pflanzenart:</label>
+        <input
+          placeholder={"Pflanzenart"}
+          id="DeviceName"
+          type="text"
+          bind:value={plantspecies}
+        />
+      </div>
+      <div class="box">
+        <Radio
+          {options}
+          fontSize={22}
+          legend="Gerätestandort:"
+          bind:userSelected={radioValue}
+        />
+      </div>
+      <button id="submitbtn" disabled={!sxdcfvgbhnjmk} type="submit">Ok</button>
+    </form>
   {/if}
 </main>
 
@@ -125,13 +121,10 @@
     padding-top: 200px;
   }
 
-  input {
-    width: 93%;
-    height: 2rem;
-    font-size: 20px;
-    padding: 0.5rem;
-    border: 1px solid #000000;
-    border-radius: 0.5rem;
+  #macadress {
+    width: 85%;
+    display: flex;
+    flex-direction: column;
   }
 
   form {

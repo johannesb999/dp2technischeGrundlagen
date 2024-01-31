@@ -10,9 +10,9 @@
   import Buddy from "./Buddy.svelte";
   import Nutzungsbedingungen from "./Nutzungsbedingungen.svelte";
 
-  import { currentRoute, loggedIn } from './svelte-store';
+  import { currentRoute, loggedIn } from "./svelte-store";
 
-  import { User, Home, ChevronLeft, Droplet } from 'lucide-svelte'
+  import { User, Home, ChevronLeft, Droplet } from "lucide-svelte";
 
   const routes = {
     "/": Login,
@@ -36,44 +36,69 @@
   }
 
   function print() {
-    console.log()
+    console.log();
   }
-
 </script>
 
 <main>
-  {#if $currentRoute === '/Login'}
-    <div id='header'>
+  {#if $currentRoute === "/Login"}
+    <div id="header">
       <h1>PlantMonit</h1>
     </div>
-    <button on:click={print}>print</button> 
     {#if $loggedIn}
       <nav>
-        <a on:click={() => changeRoute('/Home')} class="tab" href="#/Home"><Home size={35}></Home></a>
-        <a on:click={() => changeRoute('/Buddy')} class="tab" href="#/Buddy"><Droplet size={33}></Droplet></a>
-        <a on:click={() => changeRoute('/Login')} class="tab active" href="#/Login"><User size={33}></User></a>
+        <a on:click={() => changeRoute("/Home")} class="tab" href="#/Home"
+          ><Home size={35}></Home></a
+        >
+        <a on:click={() => changeRoute("/Buddy")} class="tab" href="#/Buddy"
+          ><Droplet size={33}></Droplet></a
+        >
+        <a
+          on:click={() => changeRoute("/Login")}
+          class="tab active"
+          href="#/Login"><User size={33}></User></a
+        >
       </nav>
     {/if}
-  {:else if $currentRoute === '/Home' || $currentRoute === '/Buddy'}
-  <div class='link' id='header'>
-    <h1>PlantMonit</h1>
-  </div>
-  <nav>
-    <a on:click={() => changeRoute('/Home')} class={$currentRoute === "/Home" ? "tab active" : "tab"} href="#/Home"><Home size={35}></Home></a>
-    <a on:click={() => changeRoute('/Buddy')} class={$currentRoute === "/Buddy" ? "tab active" : "tab"} href="#/Buddy"><Droplet size={33}></Droplet></a>
-    <a on:click={() => changeRoute('/Login')} class="tab" href="#/Login"><User size={33}></User></a>
-  </nav>
-  {:else }
-    <div id='header'>
-      <button on:click={goback} style="background-color: transparent; margin:0; padding:0;">
-        <ChevronLeft size={50}></ChevronLeft>  
+  {:else if $currentRoute === "/Home" || $currentRoute === "/Buddy"}
+    <div class="link" id="header">
+      <h1>PlantMonit</h1>
+    </div>
+    <nav>
+      <a
+        on:click={() => changeRoute("/Home")}
+        class={$currentRoute === "/Home" ? "tab active" : "tab"}
+        href="#/Home"><Home size={35}></Home></a
+      >
+      <a
+        on:click={() => changeRoute("/Buddy")}
+        class={$currentRoute === "/Buddy" ? "tab active" : "tab"}
+        href="#/Buddy"><Droplet size={33}></Droplet></a
+      >
+      <a on:click={() => changeRoute("/Login")} class="tab" href="#/Login"
+        ><User size={33}></User></a
+      >
+    </nav>
+  {:else}
+    <div id="header">
+      <button
+        on:click={goback}
+        style="background-color: transparent; margin:0; padding:0; width: fit-content; border: none; color: white; margin-left:20px;"
+      >
+        <ChevronLeft size={50}></ChevronLeft>
       </button>
       <h1>PlantMonit</h1>
     </div>
     <nav>
-      <a on:click={() => changeRoute('/Home')} class='tab active' href="#/Home"><Home size={35}></Home></a>
-      <a on:click={() => changeRoute('/Buddy')} class="tab" href="#/Buddy"><Droplet size={33}></Droplet></a>
-      <a on:click={() => changeRoute('/Login')} class="tab" href="#/Login"><User size={33}></User></a>
+      <a on:click={() => changeRoute("/Home")} class="tab active" href="#/Home"
+        ><Home size={35}></Home></a
+      >
+      <a on:click={() => changeRoute("/Buddy")} class="tab" href="#/Buddy"
+        ><Droplet size={33}></Droplet></a
+      >
+      <a on:click={() => changeRoute("/Login")} class="tab" href="#/Login"
+        ><User size={33}></User></a
+      >
     </nav>
   {/if}
   <Router {routes}></Router>
@@ -87,7 +112,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    background-color: rgb(46, 50, 45);
+    background-color: rgb(36, 41, 34);
     padding-top: 10px;
     padding-bottom: 10px;
   }
@@ -98,6 +123,7 @@
     flex-direction: column;
     position: relative;
     height: 100vh;
+    background-color: rgb(26, 28, 25);
     /* border: 2px solid white; */
   }
   nav {
@@ -110,7 +136,7 @@
     right: 0;
     bottom: -1px;
     align-items: center;
-    background-color: rgba(46, 50, 45);
+    background-color: rgba(36, 41, 34);
     padding-top: 30px;
     padding-bottom: 20px;
   }
@@ -118,10 +144,10 @@
     color: #ffffff;
   }
   .active {
-    color: green;
+    color: rgba(187, 213, 152);
   }
   h1 {
-    margin:0;
+    margin: 0;
     margin-right: auto;
     margin-left: auto;
     padding: 10px;

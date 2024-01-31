@@ -68,7 +68,7 @@
   }}><ListChecks /></button
 >
 {#if activeTab === "Alle"}
-  <main class="kjhgfd">
+  <main class="cardContainer">
     {#each devices as device}
       {#if !min}
         <Device {device} />
@@ -82,7 +82,7 @@
   </button> -->
   </main>
 {:else if activeTab === "Innen"}
-  <main class="kjhgfd">
+  <main class="cardContainer">
     {#each innerdevices as device}
       <Device {device} />
     {/each}
@@ -92,7 +92,7 @@
   </button> -->
   </main>
 {:else if activeTab === "Außen"}
-  <main class="kjhgfd">
+  <main class="cardContainer">
     {#each autherdevices as device}
       <Device {device} />
     {/each}
@@ -147,10 +147,8 @@
     border-bottom: 2px solid greenyellow;
   }
 
-  .kjhgfd {
-    /* margin-top: 100px; */
+  .cardContainer {
     max-height: auto;
-    /* border: 2px solid pink; */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

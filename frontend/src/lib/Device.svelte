@@ -69,7 +69,6 @@
 
       console.log(latestValues);
       console.log("alarm:", alarm);
-      showcontent = true;
       return { latestValues };
     } catch (error) {
       console.error("Fehler beim Abrufen der Gerätedaten:", error);
@@ -139,9 +138,7 @@
 {#if showcontent}
   <button on:click={linkPage}>
     <img
-      src={bildstring
-        ? `data:image/jpeg;base64,${bildstring}`
-        : "ZebraPflanze.png"}
+      src={bildstring ? `data:image/jpeg;base64,${bildstring}` : "Nils.JPG"}
       alt="Pflanze"
     />
     <div>
@@ -166,7 +163,6 @@
     width: 100%;
     height: 170px;
     padding: 0;
-    margin-bottom: 2rem;
     position: relative;
     border-radius: 10px;
   }
@@ -187,15 +183,8 @@
     color: black;
     left: 0;
     border-top-left-radius: 10px;
-    /* background-color: rgb(224, 255, 181); */
-    /* Glaseffekt-Stil */
-    background-color: rgba(
-      144,
-      238,
-      144,
-      0.13
-    ); /* Leicht grünlicher Hintergrund mit Transparenz */
-    backdrop-filter: blur(10px); /* Weichzeichnung des Hintergrunds */
+    background-color: rgba(144, 238, 144, 0.13);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(144, 238, 144, 0.3);
   }
   #data-div {
@@ -204,7 +193,6 @@
     background-color: rgb(224, 255, 181);
     color: rgb(0, 0, 0);
     z-index: 123344;
-    /* border: 2px solid green; */
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     display: flex;

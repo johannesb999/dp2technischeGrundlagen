@@ -156,31 +156,34 @@
 {#if !$loggedIn}
   <form on:submit|preventDefault={loginUser}>
     <h1>Login</h1>
-    <div>
+    <div class="parentContainer">
       <label for="email">E-mail:</label>
       <input id="email" type="email" bind:value={email} />
     </div>
-    <div>
+    <div class="parentContainer">
       <label for="password">Passwort:</label>
       <input id="password" type="password" bind:value={password} />
     </div>
 
     <button type="submit">Einloggen</button>
   </form>
-  <button id="registerbtn" on:click={linkPage}>Registrieren</button>
+  <button id="registerbtn" on:click={linkPage} style="color: white;"
+    >Registrieren</button
+  >
 {:else}
   <form>
     <h1>Nutzerinformationen</h1>
     <button id="icon">
       <UserPlus size="50"></UserPlus>
     </button>
-    <div>
+    <div class="parentContainer">
       <label for="username-display">Benutzername:</label>
       <div class="testcontainer">
         <input
           disabled={isUsernameDisabled}
           id="username-display"
           type="text"
+          style="width: 100%;"
           bind:value={username}
         />
         <button
@@ -189,17 +192,18 @@
             enableUsername();
           }}
         >
-          <Pencil></Pencil>
+          <Pencil color="lightgrey"></Pencil>
         </button>
       </div>
     </div>
-    <div>
+    <div class="parentContainer">
       <label for="email-display">Email:</label>
       <div class="testcontainer">
         <input
           disabled={isEmailDisabled}
           id="email-display"
           type="email"
+          style="width: 100%;"
           bind:value={email}
         />
         <button
@@ -208,31 +212,31 @@
             enableemail();
           }}
         >
-          <Pencil></Pencil>
+          <Pencil color="lightgrey"></Pencil>
         </button>
       </div>
       {#if !isEmailDisabled || !isUsernameDisabled}
         <button on:click={editUser}>Speichern</button>
       {/if}
     </div>
-    <div>
-      <input disabled placeholder={memberSince} />
+    <div class="inforamtion">
+      <div>Erstellt am: {memberSince}</div>
     </div>
-    <div>
-      <input disabled placeholder={devicecount.toString()} />
+    <div class="inforamtion">
+      <div>Geräteanzahl: {devicecount.toString()}</div>
     </div>
     <!-- <p>{memberSince}</p> -->
     <!-- <p>{devicecount}</p> -->
-    <button id="registerbtn" on:click={deleteUser} style="margin-top: 15px;"
+    <!-- <button id="registerbtn" on:click={deleteUser} style="margin-top: 15px;"
       >delete</button
-    >
-    <button on:click={logoutUser} style="margin-top: 6px;">Ausloggen</button>
+    > -->
+    <button on:click={logoutUser} style="margin-top: 15px;">Ausloggen</button>
   </form>
 {/if}
 
 <style>
   form {
-    margin-top: 5rem;
+    margin-top: 10rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -240,6 +244,7 @@
 
   .testcontainer {
     display: flex;
+    width: 100%;
     position: relative;
     flex-direction: row;
     align-items: center;
@@ -267,22 +272,23 @@
   }
 
   input {
-    width: 93%;
     height: 2rem;
     font-size: 20px;
     padding: 0.5rem;
-    border: 1px solid #000000;
+    border: 1px solid grey;
+    background-color: rgb(44, 50, 40);
     border-radius: 0.5rem;
   }
 
   button {
     margin-top: 3rem;
-    width: 65%;
-    padding: 0.5rem;
+    width: 80%;
+    font-size: 18px;
+    padding: 0.7rem;
     border: 1px solid #000000;
     border-radius: 0.5rem;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: rgb(224, 255, 181);
+    color: black;
   }
 
   #icon {
@@ -299,5 +305,14 @@
     margin-top: 10px;
     background-color: transparent;
     border: none;
+  }
+
+  .parentContainer {
+    width: 80%;
+  }
+  .inforamtion {
+    display: block;
+    width: 80%;
+    font-size: 18px;
   }
 </style>

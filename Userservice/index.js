@@ -19,16 +19,16 @@ const mongoClient = new MongoClient(uri, {
 });
 
 // -------------------------------DataBase connections-------------------------------
-// Verbinden mit der Datenbank
+
 async function connectToDatabase() {
   await mongoClient.connect();
   return mongoClient.db("test").collection("users");
 }
+
 async function connectToDevices() {
   await mongoClient.connect();
   return mongoClient.db("test").collection("devices");
 }
-// Geräteverbindung abrufen
 
 async function getUserData(userID) {
   await mongoClient.connect();
@@ -169,6 +169,7 @@ app.post("/logout", validateToken, (req, res) => {
   res.status(200).send("Erfolgreich abgemeldet");
 });
 
+//----Endpunkt zum Nutzer deleten(nicht 100% funktionsfähig)----
 app.post("/delete-user", validateToken, async (req, res) => {
   const users = await connectToDatabase();
   const updateResult = await users.updateOne(
@@ -184,6 +185,7 @@ app.post("/delete-user", validateToken, async (req, res) => {
   }
 });
 
+//----Endpunkt zum Nutzer widerherstellen(nicht 100% funktionsfähig)----
 app.post("/restore-user", async (req, res) => {
   const { email } = req.body;
   const users = await connectToDatabase();

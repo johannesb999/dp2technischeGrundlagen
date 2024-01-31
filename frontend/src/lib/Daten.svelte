@@ -62,22 +62,30 @@
     }
   }
 
+  const yAxisRanges = {
+    Humidity: { min: 0, max: 100 },
+    LDR: { min: 0, max: 1000 },
+    SoilMoisture: { min: 0, max: 100 },
+    Temperature: { min: 0, max: 50 },
+  };
+
   function setChartData(chartKey, data) {
+    const yAxisRange = yAxisRanges[chartKey];
     const colorMap = {
       Humidity: "#80FFA5",
-      LDR: "#00DDFF",
-      SoilMoisture: "#37A2FF",
       Temperature: "#FF0087",
+      SoilMoisture: "#37A2FF",
+      LDR: "yellow",
     };
 
     let gradientColor = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-      { offset: 0, color: colorMap[chartKey] }, // Farbe am Anfang
+      { offset: 1, color: colorMap[chartKey] }, // Farbe am Anfang
       { offset: 1, color: "white" }, // Farbe am Ende
     ]);
 
     let option = {
       title: {
-        text: `${chartKey} Data`,
+        text: `${chartKey}`,
       },
       tooltip: {
         trigger: "axis",
@@ -91,17 +99,20 @@
       xAxis: {
         type: "category",
         boundaryGap: false,
-        data: data.map((item) => item.name),
+        // data: data.map((item) => item.name),
+        data: +1,
       },
       yAxis: {
         type: "value",
+        min: yAxisRange.min,
+        max: yAxisRange.max,
       },
       series: [
         {
           smooth: true, // Glättet die Linie
           lineStyle: {
             width: 2,
-            color: "#42A5F5", // Blaue Farbe für die Linie
+            color: "grey", // Blaue Farbe für die Linie
           },
           name: chartKey,
           data: data.map((item) => item.value),
@@ -125,25 +136,29 @@
 
 <div id="chartcontainer">
   <div class="chart" id="humidity-chart"></div>
-  <div class="chart" id="ldr-chart"></div>
-  <div class="chart" id="soilmoisture-chart"></div>
   <div class="chart" id="temperature-chart"></div>
+  <div class="chart" id="soilmoisture-chart"></div>
+  <div class="chart" id="ldr-chart"></div>
 </div>
 
 <style>
   #chartcontainer {
     height: auto;
-    margin-top: 50px;
+    margin-top: 0px;
     padding-bottom: 80px;
   }
   .chart {
     padding: 0;
     margin-top: 10px;
+    padding: 10px;
+    padding-bottom: 0;
+    margin-bottom: 30px;
     margin-left: auto;
     margin-right: auto;
     width: 90vw;
     height: 300px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: rgb(44, 50, 40);
     border-radius: 15px;
   }
 </style>

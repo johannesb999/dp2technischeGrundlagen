@@ -6,7 +6,6 @@ const OpenAI = require("openai");
 const openai = new OpenAI({ apiKey: `${process.env.OpenAIKey}` });
 const clientId = `mqtt_${uuidv4()}`;
 const fs = require("fs");
-// const axios = require("axios");
 
 // MongoDB models
 const Device = require("./Models/Device");
@@ -41,10 +40,6 @@ let imagetest;
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI);
 
-app.get("/", (req, res) => {
-  res.send("Hello, world!");
-});
-
 async function savePictrue(imagee, macAdress, res) {
   const buffer = Buffer.from(imagee).toString("base64");
   const time = Date.now();
@@ -69,7 +64,7 @@ async function savePictrue(imagee, macAdress, res) {
 
 const macAdress = "30:AE:A4:14:5F:3C";
 
-// API endpoints
+//----Endpunkt zum speichern der Bilder----
 app.post("/api/addpicture", rawBodyParser, (req, res) => {
   if (req.body && req.body.length) {
     console.log(`Empfangene Bildgröße: ${req.body.length} Bytes`);
@@ -79,12 +74,12 @@ app.post("/api/addpicture", rawBodyParser, (req, res) => {
     console.log(req.body);
 
     savePictrue(req.body, macAdress, res);
-    //hier muss man die var noch umbennen.
   } else {
     res.status(400).send("Keine Daten empfangen.");
   }
 });
 
+//----Endpunkt um Bilder aus der Datenbank zu laden----
 app.post("/api/getpicture", async (req, res) => {
   try {
     await mongoClient.connect();
@@ -93,14 +88,11 @@ app.post("/api/getpicture", async (req, res) => {
     console.log("Bild wird angefragt");
 
     const device = req.body.device;
-    console.log("deviceID:", device);
 
     const deviceImages = await images
       .find({ device: device })
       .sort({ timestamp: -1 })
       .toArray();
-
-    // console.log(deviceImages);
     res.set("Content-Type", "image/jpeg");
     res.status(200).send(deviceImages);
   } catch (err) {
@@ -108,14 +100,12 @@ app.post("/api/getpicture", async (req, res) => {
   }
 });
 
+//----Enpunkt für GPT Response (Bildanalyse)----
 app.post("/api/getGPTresponse", async (req, res) => {
   try {
     const image = req.body.image;
-    // res.status(200).send(main(latestImage));
     const result = await main(image);
-    console.log("result:", result);
     res.status(200).send(result);
-    // res.status(200).send("working");
   } catch (error) {
     res.status(400).send("Keine Daten empfangen.");
   }
@@ -160,7 +150,6 @@ async function main(image) {
     temperature: 0,
   });
 
-  // Verarbeite die Antwort und versuche, sie zu einem JSON-Objekt zu konvertieren
   return parseGPTResponse(response.choices[0].message.content);
 }
 
@@ -175,13 +164,7 @@ function parseGPTResponse(responseString) {
   }
 }
 
-// Beispielverwendung:
-const responseString =
-  '{\n  "Plant": "",\n  "Pests": "",\n  "Disease": "",\n  "Decay": "",\n  "Bends": "",\n  "Cracks": "",\n  "Recommendation": ""\n}';
-const jsonResponse = parseGPTResponse(responseString);
-
-console.log(jsonResponse); // Gibt das geparste JSON-Objekt aus
-
+//----Endpunkt zum Messwerte fetchen----
 app.get("/api/measurements", async (req, res) => {
   try {
     const measurements = await Measurement.find()
@@ -241,7 +224,7 @@ mqttClient.on("message", async (topic, message) => {
   }
 });
 
-//-------------------------- Data-Endpoints---------------------------
+//-------------------------- Data-Endpoints und dazugehörige funktionen ---------------------------
 
 function validateToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -304,14 +287,10 @@ async function getmac(deviceId) {
   try {
     await mongoClient.connect();
     const collection = mongoClient.db("test").collection("devices");
-
-    // Der Filter sucht nach einem Dokument mit der angegebenen _id
     const device = await collection.findOne({ _id: new ObjectId(deviceId) });
-
     if (!device) {
       throw new Error("Gerät nicht gefunden");
     }
-
     return device.UniqueDeviceID;
   } catch (error) {
     console.error("Fehler beim Abrufen der UniqueDeviceID:", error);
@@ -322,36 +301,29 @@ async function getmac(deviceId) {
 //----Endpunkt um die Geräte des Nutzers auf dem Homescreen anzuzeigen----
 app.post("/get-devices", validateToken, async (req, res) => {
   const userDevices = await getDevice("userID", req.user.userID);
-  console.log(userDevices);
-  console.log(req.user.userID);
   res.status(200).json(userDevices);
 });
 
+//----Endpunkt um die macadress des Geräts zu holen (für Bild-fetchen)----
 app.post("/get-mac-by-deviceID", validateToken, async (req, res) => {
-  // console.log(req.body.device);
   const result = await getmac(req.body.device);
-  console.log(result);
   res.status(200).json(result);
 });
 
 //----Endpunkt um Gerät für die Einstellungen zu finden----
 app.post("/device-setting", validateToken, async (req, res) => {
   const deviceID = req.body.deviceId;
-  console.log("device-setting:", deviceID);
 
   try {
     const selectedDevice = await getDevice("_id", deviceID);
-    console.log("selectedDevice:", selectedDevice);
     res.status(200).json(selectedDevice);
   } catch {
     res.status(500).send("Gerät nicht gefunden");
   }
 });
 
-//----Endpunkt um die Gerätespezifischen Daten zu fetchen----
+//----Endpunkt um die gerätespezifischen Daten (Sensorwerte) zu fetchen----
 app.post("/device-data", validateToken, async (req, res) => {
-  console.log(req.body.deviceId);
-
   const deviceID = req.body.deviceId;
 
   try {
@@ -394,7 +366,7 @@ app.post("/update-device", validateToken, async (req, res) => {
   }
 });
 
-//----Endpunkt zum initialisieren der Geräts----
+//----Endpunkt zum initialisieren des Geräts mit den Input-Informationen----
 app.post("/initialize-device", validateToken, async (req, res) => {
   const { uniqueDeviceID, DeviceName, Location, plantspecies } = req.body;
 
@@ -428,6 +400,7 @@ app.post("/initialize-device", validateToken, async (req, res) => {
   }
 });
 
+//----Holt die Idealen Werte für dei Pflanzen (Externe Datenbank(simuliert))----
 app.post("/get-ideal-values", validateToken, async (req, res) => {
   try {
     const query = {
@@ -437,7 +410,6 @@ app.post("/get-ideal-values", validateToken, async (req, res) => {
       .db("PlantDB")
       .collection("idealValues")
       .findOne(query);
-    console.log(result);
     res.status(200).send(result);
   } catch (error) {
     console.error("Fehler beim Abrufen der Daten", error);

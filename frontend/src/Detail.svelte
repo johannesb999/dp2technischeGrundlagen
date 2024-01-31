@@ -36,11 +36,6 @@
   //   -----------------Ende Gesundheit logik-----------------
 
   // -----------------Gallerie logik----------------------
-  function updateImage(data) {
-    base64Image = data;
-    console.log(base64Image);
-  }
-
   let bildstring = "";
   let showimage = false;
 
@@ -59,12 +54,9 @@
         "http://localhost:3000/api/getpicture",
         { device: result.data }
       );
-      // console.log(response);
       bildarray = response.data;
       bildstring = response.data[0].data;
       showimage = true;
-      // const base64_image = Buffer.from().toString("base64");
-      // updateImage(response.data); // Verwenden der updateImage Funktion
       startPolling();
     } catch (error) {
       console.error("Fehler beim Abrufen des Bildes:", error);
@@ -170,7 +162,6 @@
 >
   <Settings></Settings>
 </button>
-<!-- <button on:click={debug}>debug</button> -->
 {#if activeTab === "Daten"}
   <Daten></Daten>
 
@@ -179,13 +170,11 @@
   <!-- <button on:click={fetchLatestImage}>Bild abrufen</button> -->
   {#if showimage}
     <img
-      id="sdfghjk"
+      id="healthImage"
       src={`data:image/jpeg;base64,${bildstring}`}
       alt="Bild aus der API"
     />
     {#if aiResponse}
-      <!-- <div class="health-tab"> -->
-
       <div id="buddycontainer">
         {#if isLessThanFifteenChars}
           <img id="buddy" src="BuddyHappy.svg" alt="Glückliches Gesicht" />
@@ -223,7 +212,7 @@
         </div>
         <div class="category {cracksClass}" id="cracks">
           <img
-            src="broken.svg"
+            src="brokenBlack.svg"
             alt="Knicke"
             style="width: 40px; height: 40px;"
           />
@@ -260,7 +249,7 @@
 {/if}
 
 <style>
-  #sdfghjk {
+  #healthImage {
     width: 80%;
     border-radius: 10px;
     margin-left: auto;
@@ -339,8 +328,11 @@
     position: fixed;
     z-index: 200005416985423985239520000;
     right: 2%;
-    top: 1.4rem;
+    width: fit-content;
+    top: -24px;
     background-color: transparent;
+    color: white;
+    border: none;
   }
   .tabs {
     display: flex;

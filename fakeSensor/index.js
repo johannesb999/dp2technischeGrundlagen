@@ -10,11 +10,7 @@ const interval = parseInt(process.env.INTERVAL);
 const clientId = `mqttClient_${uuidv4()}`;
 const client = mqtt.connect(mqttBrokerUrl, { clientId });
 
-const availableMacAddresses = [
-  "60:BB:A4:14:5F:3C",
-  "20:BB:A4:14:5F:3C",
-  "30:AE:A4:1B:62:18",
-];
+const availableMacAddresses = ["60:BB:A4:14:5F:3C"];
 const sensorTypes = ["Humidity", "Temperature", "SoilMoisture", "LDR"];
 
 client.on("connect", () => {
