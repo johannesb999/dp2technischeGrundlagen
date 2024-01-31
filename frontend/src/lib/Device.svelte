@@ -32,6 +32,7 @@
       showcontent = true;
     } catch (error) {
       console.error("Fehler beim Abrufen des Bildes:", error);
+      showcontent = true;
     }
   }
 
