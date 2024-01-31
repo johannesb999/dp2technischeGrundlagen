@@ -1,15 +1,13 @@
 <script>
-    import { onMount } from "svelte";
-    import * as echarts from "echarts";
-    import axios from "axios";
-    let chartInstances = {};
+  import { onMount } from "svelte";
+  import * as echarts from "echarts";
+  import axios from "axios";
+  let chartInstances = {};
 
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams(url.hash.split("?")[1]);
-    const deviceId = params.get("deviceId");
-    console.log(deviceId);
-
-
+  const url = new URL(window.location.href);
+  const params = new URLSearchParams(url.hash.split("?")[1]);
+  const deviceId = params.get("deviceId");
+  console.log(deviceId);
 
   onMount(() => {
     initializeCharts();
@@ -52,10 +50,9 @@
             value,
             name: index.toString(),
           }));
-          let nicedata = data.slice(0, 10);
+          let nicedata = data.slice(data.length - 11, data.length - 1);
           let reallynicedata = nicedata.reverse();
           console.log(reallynicedata);
-          // console.log(data);
           setChartData(key, reallynicedata);
         });
       }
@@ -126,15 +123,12 @@
   run();
 </script>
 
-
 <div id="chartcontainer">
-    <div class="chart" id="humidity-chart"></div>
-    <div class="chart" id="ldr-chart"></div>
-    <div class="chart" id="soilmoisture-chart"></div>
-    <div class="chart" id="temperature-chart"></div>
+  <div class="chart" id="humidity-chart"></div>
+  <div class="chart" id="ldr-chart"></div>
+  <div class="chart" id="soilmoisture-chart"></div>
+  <div class="chart" id="temperature-chart"></div>
 </div>
-
-
 
 <style>
   #chartcontainer {

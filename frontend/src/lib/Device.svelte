@@ -161,10 +161,10 @@
 
 <style>
   button {
-    background-color: rgb(68, 116, 58);
+    background-color: rgb(224, 255, 181);
     border-radius: 10px;
     width: 100%;
-    height: 130px;
+    height: 170px;
     padding: 0;
     margin-bottom: 2rem;
     position: relative;
@@ -187,12 +187,21 @@
     color: black;
     left: 0;
     border-top-left-radius: 10px;
-    background-color: rgb(68, 116, 58);
+    /* background-color: rgb(224, 255, 181); */
+    /* Glaseffekt-Stil */
+    background-color: rgba(
+      144,
+      238,
+      144,
+      0.13
+    ); /* Leicht grünlicher Hintergrund mit Transparenz */
+    backdrop-filter: blur(10px); /* Weichzeichnung des Hintergrunds */
+    border: 1px solid rgba(144, 238, 144, 0.3);
   }
   #data-div {
     padding-left: 5px;
     padding-right: 5px;
-    background-color: rgb(68, 116, 58);
+    background-color: rgb(224, 255, 181);
     color: rgb(0, 0, 0);
     z-index: 123344;
     /* border: 2px solid green; */

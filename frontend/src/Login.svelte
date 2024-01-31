@@ -2,7 +2,7 @@
   import axios from "axios";
   import { push } from "svelte-spa-router";
   import { UserPlus, Pencil } from "lucide-svelte";
-  import {loggedIn, token} from './svelte-store';
+  import { loggedIn, token } from "./svelte-store";
 
   let memberSince = null;
   let password = "";
@@ -13,14 +13,12 @@
   let isEmailDisabled = true;
   let userCache;
   let emailChache;
-  let currentToken = '';
-  const unsubscribe = token.subscribe(value => {
+  let currentToken = "";
+  const unsubscribe = token.subscribe((value) => {
     currentToken = value;
   });
 
   run();
-
-
 
   async function loginUser() {
     userCache = username;
@@ -43,27 +41,26 @@
       token.set(response.data.token);
       username = response.data.username;
       console.log(username);
-      loggedIn.update(prev => true);
+      loggedIn.update((prev) => true);
       checkToken();
       // window.location.href = '#/Home'
-      push('/Home');
+      push("/Home");
     } catch (error) {
       console.error("Fehler beim Login:", error);
     }
   }
-  
+
   function linkPage() {
     window.location.href = "#/Register";
   }
 
   // Logout-Funktion
   async function logoutUser() {
-    
     console.log("logging out...");
     token.set("");
     username = "";
     email = "";
-    loggedIn.update(prev => false);
+    loggedIn.update((prev) => false);
   }
 
   // axios interceptor for JWT
@@ -82,11 +79,9 @@
     }
   );
 
-
   async function deleteUser() {
-    const response = await axios.post('http://localhost:3001/delete-user');
+    const response = await axios.post("http://localhost:3001/delete-user");
   }
-
 
   //----if logged in----
 
@@ -106,8 +101,6 @@
       console.error("Kein Token vorhanden oder ungültig", error);
     }
   }
-
-
 
   function enableUsername() {
     username = null;
@@ -153,9 +146,8 @@
     }
   }
 
-
   function run() {
-    if($loggedIn) {
+    if ($loggedIn) {
       checkToken();
     }
   }
@@ -224,14 +216,16 @@
       {/if}
     </div>
     <div>
-      <input disabled placeholder={memberSince}/>
+      <input disabled placeholder={memberSince} />
     </div>
     <div>
-      <input disabled placeholder={devicecount}/>
+      <input disabled placeholder={devicecount.toString()} />
     </div>
     <!-- <p>{memberSince}</p> -->
     <!-- <p>{devicecount}</p> -->
-    <button id="registerbtn" on:click={deleteUser} style="margin-top: 15px;">delete</button>
+    <button id="registerbtn" on:click={deleteUser} style="margin-top: 15px;"
+      >delete</button
+    >
     <button on:click={logoutUser} style="margin-top: 6px;">Ausloggen</button>
   </form>
 {/if}

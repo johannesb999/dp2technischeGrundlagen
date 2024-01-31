@@ -104,11 +104,13 @@
   }
 </script>
 
-<main style=" padding: 20px; padding-top: 100px; ">
+<main id="haupt">
+  <h1>Benachrichtgungen</h1>
   {#if devices.length === 0}
+    <img src="BuddyHappy.svg" alt="happy Pflanze" />
     <h2>Bei deinen Pflanzen ist alles in bester Ordnung</h2>
   {:else}
-    <h2>DU bist ein beschissnere Gartenmensch</h2>
+    <img src="BuddySad.svg" alt="traurige Pflanze" />
     <ul id="myList">
       {#each devices as device}
         <li class={`alarm-level-${device.alarmStatus.alarmLevel}`}>
@@ -128,6 +130,13 @@
 </main>
 
 <style>
+  #haupt {
+    padding: 20px;
+    padding-top: 100px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
   #myList {
     display: flex;
     flex-direction: column;
