@@ -139,10 +139,6 @@ app.post("/login", async (req, res) => {
 
   const user = await users.findOne({ email: userData.email });
   console.log("Selected user:", user);
-  console.log(user.deleted);
-  if (user.deleted) {
-    return res.status(403).send("Dieser Nutzer wurde gelöscht");
-  }
   const username = user.username;
   console.log(username);
   console.log(userData.password);

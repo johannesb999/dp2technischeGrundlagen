@@ -371,6 +371,7 @@ app.post("/update-device", validateToken, async (req, res) => {
 app.post("/initialize-device", validateToken, async (req, res) => {
   const { uniqueDeviceID, DeviceName, Location, plantspecies } = req.body;
 
+  console.log(uniqueDeviceID);
   try {
     await mongoClient.connect();
     const result = await mongoClient
@@ -386,11 +387,6 @@ app.post("/initialize-device", validateToken, async (req, res) => {
           },
         }
       );
-    if (result.modifiedCount === 0) {
-      return res
-        .status(404)
-        .send("Gerät wurde nicht gefunden oder Daten sind unverändert");
-    }
     res.status(200).send("Gerät erfolgreich aktualisiert");
   } catch (error) {
     console.error(
