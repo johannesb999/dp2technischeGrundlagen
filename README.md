@@ -9,7 +9,7 @@ für weiterführende Informationen schauen Sie in den Readme-Ordner
 - [Funktionsweise](#funktionsweise)
   - [ESP32 Modul](#esp32-modul)
   - [ESP32-CAM Modul](#esp32-cam-modul)
-  - [SensorService (Middleware)](#sensorservice-middleware)
+  - [SensorService](#sensorservice)
   - [UserService](#userservice)
   - [Frontend (Svelte)](#frontend-svelte)
 - [Installation und Einrichtung](#installation-und-einrichtung)
