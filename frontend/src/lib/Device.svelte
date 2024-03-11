@@ -141,7 +141,7 @@
 {#if showcontent && showcontent2}
   <button on:click={linkPage}>
     <img
-      src={bildstring ? `data:image/jpeg;base64,${bildstring}` : "Nils.JPG"}
+      src={bildstring ? `data:image/jpeg;base64,${bildstring}` : "Nils.jpg"}
       alt="Pflanze"
     />
     <div>

@@ -192,7 +192,7 @@ void loop() {
       Serial.println(httpResponseCode);
     } else {
       // Fehlerhafte Übertragung
-      Serial.print("Error code: ");
+      Serial.print("Error codes: ");
       Serial.println(httpResponseCode);
     }
 
